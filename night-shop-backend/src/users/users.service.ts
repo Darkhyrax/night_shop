@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+    Injectable,
+    ConflictException,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -11,25 +15,31 @@ export class UsersService {
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
-    ) { }
+    ) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
         const { email, dni, password } = createUserDto;
 
         // Check if user exists by email
-        const userByEmail = await this.usersRepository.findOne({ where: { email } });
+        const userByEmail = await this.usersRepository.findOne({
+            where: { email },
+        });
         if (userByEmail) {
             throw new ConflictException('Email already exists');
         }
 
         // Check if user exists by username
-        const userByUserName = await this.usersRepository.findOne({ where: { username: createUserDto.username } })
+        const userByUserName = await this.usersRepository.findOne({
+            where: { username: createUserDto.username },
+        });
         if (userByUserName) {
             throw new ConflictException('Username already exists');
         }
 
         // Check if user exists by DNI
-        const userByDni = await this.usersRepository.findOne({ where: { dni } });
+        const userByDni = await this.usersRepository.findOne({
+            where: { dni },
+        });
         if (userByDni) {
             throw new ConflictException('DNI already exists');
         }
@@ -67,9 +77,13 @@ export class UsersService {
     }
 
     async findByUsername(username: string): Promise<User> {
-        const user = await this.usersRepository.findOne({ where: { username } });
+        const user = await this.usersRepository.findOne({
+            where: { username },
+        });
         if (!user) {
-            throw new NotFoundException(`User with username "${username}" not found`);
+            throw new NotFoundException(
+                `User with username "${username}" not found`,
+            );
         }
         return user;
     }
@@ -80,7 +94,7 @@ export class UsersService {
         // If email is being updated, check if it already exists
         if (updateUserDto.email && updateUserDto.email !== user.email) {
             const userByEmail = await this.usersRepository.findOne({
-                where: { email: updateUserDto.email }
+                where: { email: updateUserDto.email },
             });
             if (userByEmail) {
                 throw new ConflictException('Email already exists');
@@ -88,9 +102,12 @@ export class UsersService {
         }
 
         // If username is being updated, check if it already exists
-        if (updateUserDto.username && updateUserDto.username !== user.username) {
+        if (
+            updateUserDto.username &&
+            updateUserDto.username !== user.username
+        ) {
             const userByUserName = await this.usersRepository.findOne({
-                where: { username: updateUserDto.username }
+                where: { username: updateUserDto.username },
             });
             if (userByUserName) {
                 throw new ConflictException('Username already exists');
@@ -100,7 +117,7 @@ export class UsersService {
         // If DNI is being updated, check if it already exists
         if (updateUserDto.dni && updateUserDto.dni !== user.dni) {
             const userByDni = await this.usersRepository.findOne({
-                where: { dni: updateUserDto.dni }
+                where: { dni: updateUserDto.dni },
             });
             if (userByDni) {
                 throw new ConflictException('DNI already exists');
@@ -109,8 +126,14 @@ export class UsersService {
 
         // If password is being updated, hash it
         if (updateUserDto.password) {
-            const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
-            updateUserDto.password = await bcrypt.hash(updateUserDto.password, saltRounds);
+            const saltRounds = parseInt(
+                process.env.BCRYPT_SALT_ROUNDS || '10',
+                10,
+            );
+            updateUserDto.password = await bcrypt.hash(
+                updateUserDto.password,
+                saltRounds,
+            );
         }
 
         Object.assign(user, updateUserDto);

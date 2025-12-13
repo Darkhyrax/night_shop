@@ -29,12 +29,11 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import MainLayout from '../../components/layout/MainLayout';
 import api from '../../services/api';
-import { InventoryBatch, CurrencyType, Product } from '../../types';
+import { InventoryBatch, Product } from '../../types';
 import InventoryBatchFormDialog from './InventoryBatchFormDialog';
 import { useSnackbar } from 'notistack';
 
@@ -128,7 +127,7 @@ const Inventory: React.FC = () => {
   // Manejar guardado de lote
   const handleSaveBatch = async (values: any) => {
     try {
-      await api.post('/inventory', values);
+      await api.post('/inventory/batches', values);
       enqueueSnackbar('Lote registrado exitosamente', { variant: 'success' });
       fetchInventory();
     } catch (error: any) {
@@ -168,16 +167,16 @@ const Inventory: React.FC = () => {
     return product ? product.name : 'N/A';
   };
 
-  const formatCurrency = (value: number | null | undefined, currency: string) => {
+  const formatCurrency = (value: number | null | undefined, isBs: boolean = false) => {
     if (value === null || value === undefined || isNaN(Number(value))) {
-      return currency.toLowerCase() === CurrencyType.USD ? '$0.00' : 'Bs. 0.00';
+      return isBs ? 'Bs. 0.00' : '$0.00';
     }
 
     const numValue = Number(value);
 
-    return currency.toLowerCase() === CurrencyType.USD
-      ? `$${numValue.toFixed(2)}`
-      : `Bs. ${numValue.toFixed(2)}`;
+    return isBs
+      ? `Bs. ${numValue.toFixed(2)}`
+      : `$${numValue.toFixed(2)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -249,11 +248,11 @@ const Inventory: React.FC = () => {
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((batch) => (
                       <TableRow hover key={batch.id}>
-                        <TableCell>{batch.batchCode}</TableCell>
+                        <TableCell>{batch.batchCode || <em style={{ color: '#999' }}>Sin código</em>}</TableCell>
                         <TableCell>{getProductName(batch.productId)}</TableCell>
                         <TableCell align="right">{batch.currentQuantity}</TableCell>
-                        <TableCell align="right">{formatCurrency(batch.unitCostUsd, CurrencyType.USD)}</TableCell>
-                        <TableCell align="right">{formatCurrency(batch.sellingPriceUsd, CurrencyType.USD)}</TableCell>
+                        <TableCell align="right">{formatCurrency(batch.unitCostUsd, false)}</TableCell>
+                        <TableCell align="right">{formatCurrency(batch.sellingPriceUsd, false)}</TableCell>
                         <TableCell>{formatDate(batch.purchaseDate)}</TableCell>
                         <TableCell align="center">
                           <Tooltip title="Ver detalles">
@@ -337,58 +336,165 @@ const Inventory: React.FC = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Detalles del Lote</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ backgroundColor: 'primary.main', color: 'white', fontWeight: 'bold' }}>
+          Detalles del Lote de Compra
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
           {selectedBatch && (
             <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card variant="outlined">
+              {/* Información General */}
+              <Grid size={{ xs: 12 }}>
+                <Card sx={{ backgroundColor: '#f5f5f5', borderLeft: '4px solid #1976d2' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>Información General</Typography>
-                    <Typography><strong>Código:</strong> {selectedBatch.batchCode}</Typography>
-                    <Typography><strong>Producto:</strong> {getProductName(selectedBatch.productId)}</Typography>
-                    <Typography><strong>Fecha de Compra:</strong> {formatDate(selectedBatch.purchaseDate)}</Typography>
-                    {selectedBatch.expirationDate && (
-                      <Typography><strong>Fecha de Vencimiento:</strong> {formatDate(selectedBatch.expirationDate)}</Typography>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                      📋 Información General
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Código del Lote</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>{selectedBatch.batchCode}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Producto</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>{getProductName(selectedBatch.productId)}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Fecha de Compra</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>{formatDate(selectedBatch.purchaseDate)}</Typography>
+                      </Box>
+                      {selectedBatch.expirationDate && (
+                        <Box>
+                          <Typography variant="caption" color="textSecondary">Fecha de Vencimiento</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+                            {formatDate(selectedBatch.expirationDate)}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Moneda de Pago y Tasa de Cambio */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Card sx={{ 
+                  backgroundColor: selectedBatch.costCurrency === 'usd' ? '#e3f2fd' : '#fff3e0', 
+                  borderLeft: selectedBatch.costCurrency === 'usd' ? '4px solid #1976d2' : '4px solid #f57c00'
+                }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      💳 Moneda de Pago
+                    </Typography>
+                    <Chip
+                      label={selectedBatch.costCurrency === 'usd' ? 'Pagado en USD' : 'Pagado en Bolívares'}
+                      color={selectedBatch.costCurrency === 'usd' ? 'primary' : 'warning'}
+                      variant="filled"
+                      sx={{ mt: 1, fontSize: '1rem', padding: '20px 10px' }}
+                    />
+                    {selectedBatch.purchaseExchangeRate && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="caption" color="textSecondary">Tasa de Cambio del Día</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                          1 USD = {Number(selectedBatch.purchaseExchangeRate.rate).toFixed(2)} Bs
+                        </Typography>
+                      </Box>
                     )}
                   </CardContent>
                 </Card>
               </Grid>
+
+              {/* Cantidades */}
               <Grid size={{ xs: 12, md: 6 }}>
-                <Card variant="outlined">
+                <Card sx={{ backgroundColor: '#f3e5f5', borderLeft: '4px solid #7b1fa2' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>Cantidades</Typography>
-                    <Typography><strong>Cantidad Inicial:</strong> {selectedBatch.initialQuantity}</Typography>
-                    <Typography><strong>Cantidad Actual:</strong> {selectedBatch.currentQuantity}</Typography>
-                    <Typography><strong>% de Ganancia:</strong> {selectedBatch.profitPercentage}%</Typography>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#7b1fa2' }}>
+                      📦 Cantidades
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Cantidad Inicial</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{selectedBatch.initialQuantity}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Cantidad Actual</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{selectedBatch.currentQuantity}</Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="caption" color="textSecondary">Porcentaje de Ganancia</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                        {selectedBatch.profitPercentage}%
+                      </Typography>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
+
+              {/* Costos */}
               <Grid size={{ xs: 12, md: 6 }}>
-                <Card variant="outlined">
+                <Card sx={{ backgroundColor: '#fce4ec', borderLeft: '4px solid #c2185b' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>Costos</Typography>
-                    <Typography><strong>Costo Total USD:</strong> {formatCurrency(selectedBatch.totalCostUsd, CurrencyType.USD)}</Typography>
-                    <Typography><strong>Costo Total Bs:</strong> {formatCurrency(selectedBatch.totalCostBs, CurrencyType.BS)}</Typography>
-                    <Typography><strong>Costo Unitario USD:</strong> {formatCurrency(selectedBatch.unitCostUsd, CurrencyType.USD)}</Typography>
-                    <Typography><strong>Costo Unitario Bs:</strong> {formatCurrency(selectedBatch.unitCostBs, CurrencyType.BS)}</Typography>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#c2185b' }}>
+                      💰 Costo Total
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">USD</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{formatCurrency(selectedBatch.totalCostUsd, false)}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Bolívares</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{formatCurrency(selectedBatch.totalCostBs, true)}</Typography>
+                      </Box>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
+
+              {/* Costo Unitario */}
               <Grid size={{ xs: 12, md: 6 }}>
-                <Card variant="outlined" sx={{ bgcolor: 'success.light' }}>
+                <Card sx={{ backgroundColor: '#e8f5e9', borderLeft: '4px solid #388e3c' }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>Precio de Venta</Typography>
-                    <Typography><strong>Precio USD:</strong> {formatCurrency(selectedBatch.sellingPriceUsd, CurrencyType.USD)}</Typography>
-                    <Typography><strong>Precio Bs (referencial):</strong> {formatCurrency(selectedBatch.sellingPriceUsd * (selectedBatch.totalCostBs / selectedBatch.totalCostUsd), CurrencyType.BS)}</Typography>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#388e3c' }}>
+                      🏷️ Costo Unitario
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">USD</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{formatCurrency(selectedBatch.unitCostUsd, false)}</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Bolívares</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{formatCurrency(selectedBatch.unitCostBs, true)}</Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Precio de Venta */}
+              <Grid size={{ xs: 12 }}>
+                <Card sx={{ backgroundColor: '#c8e6c9', borderLeft: '4px solid #2e7d32' }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                      ✅ Precio de Venta (con {selectedBatch.profitPercentage}% de ganancia)
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Precio en USD</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                          {formatCurrency(selectedBatch.sellingPriceUsd, false)}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDetailsDialogOpen(false)} color="primary">
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDetailsDialogOpen(false)} variant="contained" color="primary">
             Cerrar
           </Button>
         </DialogActions>

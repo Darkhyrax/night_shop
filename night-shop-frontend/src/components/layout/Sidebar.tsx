@@ -12,6 +12,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
@@ -85,6 +86,16 @@ const Sidebar: React.FC = () => {
             <PeopleIcon />
           </ListItemIcon>
           <ListItemText primary="Clientes" />
+        </ListItemButton>
+        
+        <ListItemButton 
+          selected={isActive('/reports')} 
+          onClick={() => handleNavigation('/reports')}
+        >
+          <ListItemIcon>
+            <AssessmentIcon />
+          </ListItemIcon>
+          <ListItemText primary="Reportes" />
         </ListItemButton>
         
         {/* Mostrar opciones de administrador solo para usuarios con rol admin */}

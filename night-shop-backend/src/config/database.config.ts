@@ -1,24 +1,24 @@
-import { registerAs } from "@nestjs/config";
+import { registerAs } from '@nestjs/config';
 import { config as dotenvConfig } from 'dotenv';
-import { DataSource, DataSourceOptions } from "typeorm";
+import { DataSource, DataSourceOptions } from 'typeorm';
 
 dotenvConfig({ path: '.env' });
 
 const config = {
     type: 'postgres',
-    host: `${process.env.DATABASE_HOST}`,
-    port: parseInt(`${process.env.DATABASE_PORT}`, 10),
-    username: `${process.env.DATABASE_USERNAME}`,
-    password: `${process.env.DATABASE_PASSWORD}`,
-    database: `${process.env.DATABASE_NAME}`,
-    entities: ["src/**/*.entity.ts"],
-    migrations: ["src/migrations/*.ts"],
+    host: `${process.env.DB_HOST || 'localhost'}`,
+    port: parseInt(`${process.env.DB_PORT || 5432}`, 10),
+    username: `${process.env.DB_USER || 'postgres'}`,
+    password: `${process.env.DB_PASSWORD}`,
+    database: `${process.env.DB_NAME || 'night_shop_db'}`,
+    entities: [process.env.NODE_ENV === 'production' ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
+    migrations: [process.env.NODE_ENV === 'production' ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
     autoLoadEntities: true,
-    synchronize: false,
+    synchronize: process.env.DB_SYNCHRONIZE === 'true' || false,
     cli: {
         migrationsDir: 'src/migrations',
     },
-}
+};
 
-export default registerAs('typeorm', () => config)
+export default registerAs('typeorm', () => config);
 export const connectionSource = new DataSource(config as DataSourceOptions);

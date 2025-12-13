@@ -8,7 +8,9 @@ const Dashboard = React.lazy(() => import('../features/dashboard/Dashboard'));
 const Products = React.lazy(() => import('../features/products/Products'));
 const Inventory = React.lazy(() => import('../features/inventory/Inventory'));
 const Sales = React.lazy(() => import('../features/sales/Sales'));
+const CreateSale = React.lazy(() => import('../features/sales/CreateSale'));
 const Customers = React.lazy(() => import('../features/customers/Customers'));
+const Reports = React.lazy(() => import('../features/reports/Reports'));
 const Users = React.lazy(() => import('../features/users/Users'));
 const NotFound = React.lazy(() => import('../components/layout/NotFound'));
 
@@ -72,10 +74,26 @@ const AppRoutes: React.FC = () => {
                     }
                 />
                 <Route
+                    path="/sales/create"
+                    element={
+                        <ProtectedRoute>
+                            <CreateSale />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/customers"
                     element={
                         <ProtectedRoute>
                             <Customers />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/reports"
+                    element={
+                        <ProtectedRoute>
+                            <Reports />
                         </ProtectedRoute>
                     }
                 />

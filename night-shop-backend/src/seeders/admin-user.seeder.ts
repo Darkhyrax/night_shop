@@ -7,40 +7,45 @@ import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AdminUserSeeder {
-  private readonly logger = new Logger(AdminUserSeeder.name);
+    private readonly logger = new Logger(AdminUserSeeder.name);
 
-  constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-  ) {}
+    constructor(
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
+    ) {}
 
-  async seed(): Promise<void> {
-    const adminCount = await this.usersRepository.count({
-      where: { role: UserRole.ADMIN },
-    });
+    async seed(): Promise<void> {
+        const adminCount = await this.usersRepository.count({
+            where: { role: UserRole.ADMIN },
+        });
 
-    if (adminCount === 0) {
-      this.logger.log('Creando usuario administrador por defecto...');
-      
-      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
-      const hashedPassword = await bcrypt.hash('admin123', saltRounds);
+        if (adminCount === 0) {
+            this.logger.log('Creando usuario administrador por defecto...');
 
-      const admin = this.usersRepository.create({
-        email: 'admin@nightshop.com',
-        username: 'admin',
-        firstName: 'Admin',
-        lastName: 'User',
-        phoneNumber: '1234567890',
-        dni: 'ADMIN001',
-        password: hashedPassword,
-        role: UserRole.ADMIN,
-        isActive: true,
-      });
+            const saltRounds = parseInt(
+                process.env.BCRYPT_SALT_ROUNDS || '10',
+                10,
+            );
+            const hashedPassword = await bcrypt.hash('admin123', saltRounds);
 
-      await this.usersRepository.save(admin);
-      this.logger.log('Usuario administrador creado exitosamente');
-    } else {
-      this.logger.log('El usuario administrador ya existe, omitiendo creación');
+            const admin = this.usersRepository.create({
+                email: 'admin@nightshop.com',
+                username: 'admin',
+                firstName: 'Admin',
+                lastName: 'User',
+                phoneNumber: '1234567890',
+                dni: 'ADMIN001',
+                password: hashedPassword,
+                role: UserRole.ADMIN,
+                isActive: true,
+            });
+
+            await this.usersRepository.save(admin);
+            this.logger.log('Usuario administrador creado exitosamente');
+        } else {
+            this.logger.log(
+                'El usuario administrador ya existe, omitiendo creación',
+            );
+        }
     }
-  }
 }

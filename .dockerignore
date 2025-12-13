@@ -1,0 +1,67 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation (development only)
+docs/
+README.md
+DEPLOYMENT.md
+docker-compose.prod.yml
+ARCHITECTURE.md
+DOCKER_GUIDE.md
+GITHUB_SETUP.md
+DOCKER_IMAGES.md
+
+# Development files
+.env
+.env.example
+.editorconfig
+.prettierrc
+.eslintrc*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node modules (will be installed in container)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+test/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Scripts
+start.bat
+start.sh
+TEST.md
+
+# Database
+*.sql
+backup*
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp

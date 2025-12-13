@@ -9,11 +9,20 @@ export enum UserRole {
 
 export enum SaleStatus {
   PENDING = 'pending',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled'
+  COMPLETED = 'completed'
 }
 
-export enum CurrencyType {
+export enum PaymentCurrency {
+  USD = 'usd',
+  BS = 'bs'
+}
+
+export enum SaleType {
+  CREDIT = 'credit',
+  CASH = 'cash'
+}
+
+export enum ChangePaymentMethod {
   USD = 'usd',
   BS = 'bs',
   MIXED = 'mixed'
@@ -52,9 +61,11 @@ export interface InventoryBatch {
   id: ID;
   productId: ID;
   batchCode: string;
+  costCurrency: 'usd' | 'bs';
   totalCostBs: number;
   totalCostUsd: number;
   purchaseExchangeRateId: ID;
+  purchaseExchangeRate?: ExchangeRate;
   initialQuantity: number;
   currentQuantity: number;
   profitPercentage: number;
@@ -82,27 +93,72 @@ export interface Customer {
 export interface ExchangeRate {
   id: ID;
   rate: number;
-  date: string;
+  effectiveDate: string;
   isActive: boolean;
+  source?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ExchangeRateSyncLog {
+  id: ID;
+  syncedAt: string;
+  success: boolean;
+  errorMessage?: string | null;
+  rate?: number | null;
+  source: string;
+}
+
+export interface SyncStatus {
+  lastSync: ExchangeRateSyncLog | null;
+  success: boolean | null;
+  errorMessage: string | null;
+  rate: number | null;
+  syncedAt: string | null;
 }
 
 export interface Sale {
   id: ID;
   status: SaleStatus;
-  currency: CurrencyType;
+  saleType: SaleType;
   totalAmountBs: number;
   totalAmountUsd: number;
   exchangeRateId: ID;
+  exchangeRate?: ExchangeRate;
   paidAmountBs: number;
   paidAmountUsd: number;
+  changeUsd: number;
+  changeBS: number;
+  changeTotalUsd: number;
+  changePaymentMethod?: ChangePaymentMethod;
   userId: ID;
   customerId?: ID;
+  customer?: Customer;
   notes?: string;
   createdAt: string;
   updatedAt: string;
   saleDetails?: SaleDetail[];
+  customerPayments?: CustomerPayment[];
+}
+
+export interface CustomerAccount {
+  id: ID;
+  customerId: ID;
+  saleId: ID;
+  debtUsd: number;
+  createdAt: string;
+}
+
+export interface CustomerPayment {
+  id: ID;
+  customerId: ID;
+  amountUsd: number;
+  paidInCurrency: PaymentCurrency;
+  amountPaidInOriginalCurrency: number;
+  exchangeRateId?: ID;
+  isInitialPayment: boolean;
+  createdAt: string;
 }
 
 export interface SaleDetail {
@@ -114,6 +170,7 @@ export interface SaleDetail {
   unitPriceUsd: number;
   subtotalBs: number;
   subtotalUsd: number;
+  product?: Product;
   createdAt: string;
   updatedAt: string;
 }

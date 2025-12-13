@@ -27,7 +27,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Product, CurrencyType } from '../../types';
+import { Product } from '../../types';
 import api from '../../services/api';
 
 interface InventoryBatchFormDialogProps {
@@ -63,7 +63,9 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
         const fetchExchangeRate = async () => {
             try {
                 const response = await api.get('/exchange-rates/current');
-                setExchangeRate(response.data.rate);
+                // La API puede devolver la tasa como string (por columnas decimal en la BD),
+                // nos aseguramos de convertirla explícitamente a number.
+                setExchangeRate(Number(response.data.rate));
                 setExchangeRateId(response.data.id);
             } catch (error) {
                 console.error('Error al cargar tasa de cambio:', error);
@@ -88,17 +90,17 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
         initialValues: {
             productId: '',
             batchCode: '',
-            costCurrency: CurrencyType.USD,
+            costCurrency: 'usd',
             totalCost: '',
             initialQuantity: '',
             profitPercentage: '',
             purchaseDate: new Date(),
             expirationDate: null,
-            purchaseExchangeRateId: exchangeRateId
+            purchaseExchangeRateId: ''
         },
         validationSchema: Yup.object({
             productId: Yup.string().required('El producto es requerido'),
-            batchCode: Yup.string().required('El código del lote es requerido'),
+            batchCode: Yup.string().optional(),
             costCurrency: Yup.string().required('La moneda es requerida'),
             totalCost: Yup.number()
                 .required('El costo total es requerido')
@@ -127,7 +129,6 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                 setLoading(false);
             }
         },
-        enableReinitialize: true,
     });
 
     // Resetear el formulario y errores cuando se cierra el diálogo
@@ -139,20 +140,17 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
         }
     }, [open]);
 
-    // Actualizar el ID de la tasa de cambio cuando cambia
-    useEffect(() => {
-        if (exchangeRateId) {
-            formik.setFieldValue('purchaseExchangeRateId', exchangeRateId);
-        }
-    }, [exchangeRateId]);
-
     // Cálculos automáticos
     const calculateUnitCost = () => {
         const totalCost = Number(formik.values.totalCost);
         const quantity = Number(formik.values.initialQuantity);
+        const currency = formik.values.costCurrency;
 
         if (totalCost && quantity && quantity > 0) {
-            return totalCost / quantity;
+            // Convertir el costo total a USD primero
+            const totalCostUsd = currency === 'usd' ? totalCost : totalCost / exchangeRate;
+            // Luego dividir entre la cantidad para obtener el costo unitario en USD
+            return totalCostUsd / quantity;
         }
         return 0;
     };
@@ -169,7 +167,7 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
 
     // Conversión de moneda
     const convertCurrency = (amount: number, fromCurrency: string) => {
-        if (fromCurrency === CurrencyType.USD) {
+        if (fromCurrency === 'usd') {
             return {
                 usd: amount,
                 bs: amount * exchangeRate
@@ -214,11 +212,11 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                 fullWidth
                                 id="batchCode"
                                 name="batchCode"
-                                label="Código del Lote"
+                                label="Código del Lote (Opcional)"
                                 value={formik.values.batchCode}
                                 onChange={formik.handleChange}
                                 error={formik.touched.batchCode && Boolean(formik.errors.batchCode)}
-                                helperText={formik.touched.batchCode && formik.errors.batchCode}
+                                helperText={formik.touched.batchCode && formik.errors.batchCode ? formik.errors.batchCode : "Dejar vacío si el producto no tiene código de lote"}
                             />
                         </Grid>
                     </Grid>
@@ -250,8 +248,8 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                     onChange={formik.handleChange}
                                     label="Moneda"
                                 >
-                                    <MenuItem value={CurrencyType.USD}>USD</MenuItem>
-                                    <MenuItem value={CurrencyType.BS}>Bs</MenuItem>
+                                    <MenuItem value="usd">USD</MenuItem>
+                                    <MenuItem value="bs">Bs</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>
@@ -260,7 +258,7 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                 fullWidth
                                 id="totalCost"
                                 name="totalCost"
-                                label={`Costo Total (${formik.values.costCurrency === CurrencyType.USD ? 'USD' : 'Bs'})`}
+                                label={`Costo Total (${formik.values.costCurrency === 'usd' ? 'USD' : 'Bs'})`}
                                 type="number"
                                 value={formik.values.totalCost}
                                 onChange={formik.handleChange}
@@ -269,7 +267,7 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            {formik.values.costCurrency === CurrencyType.USD ? '$' : 'Bs.'}
+                                            {formik.values.costCurrency === 'usd' ? '$' : 'Bs.'}
                                         </InputAdornment>
                                     ),
                                 }}
@@ -335,7 +333,7 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                     <Grid container spacing={3}>
                         <Grid size={{ xs: 12 }}>
                             <Typography variant="subtitle1" gutterBottom>
-                                Tasa de cambio actual: 1 USD = {exchangeRate.toFixed(2)} Bs
+                                Tasa de cambio actual: 1 USD = {Number(exchangeRate || 0).toFixed(2)} Bs
                             </Typography>
                         </Grid>
                         <Grid size={{ xs: 12 }}>
@@ -346,6 +344,10 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                 <Typography variant="subtitle2" color="text.secondary">
                                     Costo Total
                                 </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                                    <Typography variant="body1">Cantidad del lote:</Typography>
+                                    <Typography variant="body1">{formik.values.initialQuantity}</Typography>
+                                </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                                     <Typography variant="body1">USD:</Typography>
                                     <Typography variant="body1">${totalCostUsd.toFixed(2)}</Typography>
@@ -436,7 +438,7 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                         color="primary"
                         onClick={handleNext}
                         disabled={
-                            (activeStep === 0 && (!formik.values.productId || !formik.values.batchCode)) ||
+                            (activeStep === 0 && !formik.values.productId) ||
                             (activeStep === 1 && (!formik.values.initialQuantity || !formik.values.totalCost || !formik.values.profitPercentage))
                         }
                     >

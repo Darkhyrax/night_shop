@@ -12,12 +12,13 @@ import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 import { SeedersModule } from './seeders/seeders.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            load: [databaseConfig]
+            load: [databaseConfig],
         }),
         TypeOrmModule.forRootAsync({
             inject: [ConfigService],
@@ -27,7 +28,7 @@ import { SeedersModule } from './seeders/seeders.module';
                     throw new Error('Database configuration not found');
                 }
                 return dbConfig;
-            }
+            },
         }),
         UsersModule,
         ProductsModule,
@@ -37,8 +38,9 @@ import { SeedersModule } from './seeders/seeders.module';
         CustomersModule,
         ExchangeRatesModule,
         SeedersModule,
+        ReportsModule,
     ],
     controllers: [AppController],
     providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

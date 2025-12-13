@@ -26,7 +26,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import MainLayout from '../../components/layout/MainLayout';
 import { productsApi } from '../../services/productsApi';
-import { Product, CurrencyType } from '../../types';
+import { Product } from '../../types';
 import ProductFormDialog from './ProductFormDialog';
 import DeleteConfirmDialog from '../../components/ui/DeleteConfirmDialog';
 

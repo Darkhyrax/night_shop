@@ -3,7 +3,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -19,6 +19,13 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "preserveConstEnums": true
+  },
+  "ts-node": {
+    "transpileOnly": false,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
   }
 }

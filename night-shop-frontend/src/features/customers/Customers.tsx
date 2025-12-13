@@ -22,13 +22,14 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import MainLayout from '../../components/layout/MainLayout';
 import { customersApi } from '../../services/customersApi';
 import { Customer } from '../../types';
 import CustomerFormDialog from './CustomerFormDialog';
 import DeleteConfirmDialog from '../../components/ui/DeleteConfirmDialog';
+import CustomerDebtModal from './CustomerDebtModal';
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -44,6 +45,7 @@ const Customers: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [isDebtModalOpen, setIsDebtModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -112,6 +114,12 @@ const Customers: React.FC = () => {
   const handleDeleteClick = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsDeleteDialogOpen(true);
+  };
+
+  // Abrir modal de abonos de deudas
+  const handleOpenDebtModal = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDebtModalOpen(true);
   };
 
   // Eliminar cliente
@@ -254,6 +262,16 @@ const Customers: React.FC = () => {
                         <TableCell>{customer.address || 'N/A'}</TableCell>
                         <TableCell>{formatDate(customer.createdAt)}</TableCell>
                         <TableCell align="center">
+                          <Tooltip title="Abonar Deudas">
+                            <IconButton
+                              size="small"
+                              color="warning"
+                              onClick={() => handleOpenDebtModal(customer)}
+                              disabled={isLoading}
+                            >
+                              <AttachMoneyIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Editar">
                             <IconButton
                               size="small"
@@ -323,6 +341,23 @@ const Customers: React.FC = () => {
         content={`¿Estás seguro de que deseas eliminar al cliente ${selectedCustomer?.firstName} ${selectedCustomer?.lastName}? Esta acción no se puede deshacer.`}
         isLoading={isLoading}
       />
+
+      {/* Modal de abonos de deudas */}
+      {selectedCustomer && (
+        <CustomerDebtModal
+          open={isDebtModalOpen}
+          onClose={() => {
+            setIsDebtModalOpen(false);
+            setSelectedCustomer(null);
+          }}
+          customer={selectedCustomer}
+          onPaymentSuccess={() => {
+            setSuccessMessage(`Abono registrado exitosamente para ${selectedCustomer.firstName} ${selectedCustomer.lastName}`);
+            setShowSuccess(true);
+            fetchCustomers();
+          }}
+        />
+      )}
 
       {/* Alerta de éxito */}
       <Snackbar

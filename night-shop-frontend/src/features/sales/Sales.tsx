@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -12,34 +12,60 @@ import {
   Button,
   CircularProgress,
   TablePagination,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout';
 import api from '../../services/api';
-import { Sale, SaleStatus, CurrencyType } from '../../types';
+import { Sale, SaleStatus } from '../../types';
+import SaleDetailsModal from './components/SaleDetailsModal';
+import PaymentModal from './components/PaymentModal';
 
 const Sales: React.FC = () => {
+  const navigate = useNavigate();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+
+  const fetchSales = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/sales');
+      setSales(response.data);
+    } catch (error) {
+      console.error('Error al cargar ventas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handlePaymentSuccess = async () => {
+    // Refrescar todas las ventas
+    await fetchSales();
+  };
 
   useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/sales');
-        setSales(response.data);
-      } catch (error) {
-        console.error('Error al cargar ventas:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchSales();
-  }, []);
+  }, [fetchSales]);
+
+  // Actualizar selectedSale cuando cambia la lista de ventas
+  useEffect(() => {
+    if (selectedSale && sales.length > 0) {
+      const updatedSale = sales.find((s: Sale) => s.id === selectedSale.id);
+      if (updatedSale && JSON.stringify(updatedSale) !== JSON.stringify(selectedSale)) {
+        setSelectedSale(updatedSale);
+      }
+    }
+  }, [sales, selectedSale?.id]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -50,16 +76,16 @@ const Sales: React.FC = () => {
     setPage(0);
   };
 
-  const formatCurrency = (value: number | null | undefined, currency: string) => {
+  const formatCurrency = (value: number | null | undefined, isBs: boolean = false) => {
     if (value === null || value === undefined || isNaN(Number(value))) {
-      return currency.toLowerCase() === CurrencyType.USD ? '$0.00' : 'Bs. 0.00';
+      return isBs ? 'Bs. 0.00' : '$0.00';
     }
     
     const numValue = Number(value);
     
-    return currency.toLowerCase() === CurrencyType.USD 
-      ? `$${numValue.toFixed(2)}` 
-      : `Bs. ${numValue.toFixed(2)}`;
+    return isBs 
+      ? `Bs. ${numValue.toFixed(2)}` 
+      : `$${numValue.toFixed(2)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -72,10 +98,19 @@ const Sales: React.FC = () => {
         return 'success';
       case SaleStatus.PENDING:
         return 'warning';
-      case SaleStatus.CANCELLED:
-        return 'error';
       default:
         return 'default';
+    }
+  };
+
+  const getStatusLabel = (status: SaleStatus) => {
+    switch (status) {
+      case SaleStatus.COMPLETED:
+        return 'Completado';
+      case SaleStatus.PENDING:
+        return 'Pendiente';
+      default:
+        return status;
     }
   };
 
@@ -89,6 +124,7 @@ const Sales: React.FC = () => {
           variant="contained" 
           color="primary" 
           startIcon={<AddIcon />}
+          onClick={() => navigate('/sales/create')}
         >
           Nueva Venta
         </Button>
@@ -105,11 +141,12 @@ const Sales: React.FC = () => {
               <Table stickyHeader aria-label="sticky table">
                 <TableHead>
                   <TableRow>
-                    <TableCell>ID</TableCell>
                     <TableCell>Cliente</TableCell>
                     <TableCell>Fecha</TableCell>
-                    <TableCell align="right">Total</TableCell>
-                    <TableCell>Moneda</TableCell>
+                    <TableCell align="right">Total USD</TableCell>
+                    <TableCell align="right">Total Bs</TableCell>
+                    <TableCell align="right">Pagado USD</TableCell>
+                    <TableCell align="right">Pagado Bs</TableCell>
                     <TableCell>Estado</TableCell>
                     <TableCell align="center">Acciones</TableCell>
                   </TableRow>
@@ -119,38 +156,54 @@ const Sales: React.FC = () => {
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((sale) => (
                       <TableRow hover key={sale.id}>
-                        <TableCell>{sale.id}</TableCell>
-                        <TableCell>{sale.customerId ? `Cliente ID: ${sale.customerId}` : 'Cliente General'}</TableCell>
+                        <TableCell>{sale.customerId ? `${sale.customer?.firstName} ${sale.customer?.lastName}` : 'Cliente General'}</TableCell>
                         <TableCell>{formatDate(sale.createdAt)}</TableCell>
-                        <TableCell align="right">{formatCurrency(sale.currency.toLowerCase() === CurrencyType.USD ? sale.totalAmountUsd : sale.totalAmountBs, sale.currency)}</TableCell>
-                        <TableCell>{sale.currency}</TableCell>
+                        <TableCell align="right">{formatCurrency(sale.totalAmountUsd, false)}</TableCell>
+                        <TableCell align="right">{formatCurrency(sale.totalAmountBs, true)}</TableCell>
+                        <TableCell align="right">{formatCurrency(sale.paidAmountUsd, false)}</TableCell>
+                        <TableCell align="right">{formatCurrency(sale.paidAmountBs, true)}</TableCell>
                         <TableCell>
                           <Chip 
-                            label={sale.status} 
+                            label={getStatusLabel(sale.status)} 
                             color={getStatusColor(sale.status) as any}
                             size="small"
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <Button size="small" color="primary">
-                            Detalles
-                          </Button>
-                          {sale.status === SaleStatus.PENDING && (
-                            <>
-                              <Button size="small" color="success">
-                                Completar
-                              </Button>
-                              <Button size="small" color="error">
-                                Cancelar
-                              </Button>
-                            </>
-                          )}
+                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                            <Tooltip title="Ver Detalles">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => {
+                                  setSelectedSale(sale);
+                                  setDetailsModalOpen(true);
+                                }}
+                              >
+                                <SearchIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            {sale.customerId && sale.saleType === 'credit' && sale.status === SaleStatus.PENDING && (sale.totalAmountUsd - (sale.paidAmountUsd || 0)) > 0 && (
+                              <Tooltip title="Abonar">
+                                <IconButton
+                                  size="small"
+                                  color="warning"
+                                  onClick={() => {
+                                    setSelectedSale(sale);
+                                    setPaymentModalOpen(true);
+                                  }}
+                                >
+                                  <AttachMoneyIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}
                   {sales.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={9} align="center">
                         No hay ventas disponibles
                       </TableCell>
                     </TableRow>
@@ -171,6 +224,21 @@ const Sales: React.FC = () => {
           </>
         )}
       </Paper>
+      {selectedSale && (
+        <>
+          <SaleDetailsModal 
+            open={detailsModalOpen}
+            onClose={() => setDetailsModalOpen(false)}
+            sale={selectedSale}
+          />
+          <PaymentModal 
+            open={paymentModalOpen}
+            onClose={() => setPaymentModalOpen(false)}
+            sale={selectedSale}
+            onPaymentSuccess={handlePaymentSuccess}
+          />
+        </>
+      )}
     </MainLayout>
   );
 };
