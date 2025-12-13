@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AdminUserSeeder } from './seeders/admin-user.seeder';
 import { CustomerSeeder } from './seeders/customer.seeder';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
@@ -43,6 +44,19 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
+
+    // Ejecutar migraciones
+    try {
+        const dataSource = app.get(DataSource);
+        if (!dataSource.isInitialized) {
+            await dataSource.initialize();
+        }
+        logger.log('Ejecutando migraciones...');
+        await dataSource.runMigrations();
+        logger.log('Migraciones ejecutadas correctamente');
+    } catch (error) {
+        logger.error(`Error al ejecutar migraciones: ${error.message}`);
+    }
 
     // Ejecutar seeders
     try {

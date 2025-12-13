@@ -432,12 +432,12 @@ services:
 ```yaml
 services:
   backend-1:
-    image: ghcr.io/Darkhyrax/night-shop-backend:latest
+    image: ghcr.io/darkhyrax/night_shop-backend:latest
     ports:
       - "3000:3000"
   
   backend-2:
-    image: ghcr.io/Darkhyrax/night-shop-backend:latest
+    image: ghcr.io/darkhyrax/night_shop-backend:latest
     ports:
       - "3001:3000"
   

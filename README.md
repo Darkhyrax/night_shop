@@ -16,8 +16,8 @@ Un CMS profesional y escalable diseñado para tiendas locales, con soporte para 
 
 #### 1. Descargar la imagen
 ```bash
-docker pull ghcr.io/Darkhyrax/night-shop-backend:latest
-docker pull ghcr.io/Darkhyrax/night-shop-frontend:latest
+docker pull ghcr.io/darkhyrax/night_shop-backend:latest
+docker pull ghcr.io/darkhyrax/night_shop-frontend:latest
 ```
 
 #### 2. Crear archivo `docker-compose.yml`
@@ -42,7 +42,7 @@ services:
       retries: 5
 
   backend:
-    image: ghcr.io/Darkhyrax/night-shop-backend:latest
+    image: ghcr.io/darkhyrax/night_shop-backend:latest
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -61,7 +61,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ghcr.io/Darkhyrax/night-shop-frontend:latest
+    image: ghcr.io/darkhyrax/night_shop-frontend:latest
     environment:
       REACT_APP_API_URL: http://localhost:3000
     ports:
