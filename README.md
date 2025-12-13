@@ -73,6 +73,8 @@ volumes:
   postgres_data:
 ```
 
+> **⚠️ IMPORTANTE:** Antes del paso 3, reemplaza `your-secret-key-change-in-production` con una clave segura. Ver **Paso 3** en [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones.
+
 #### 3. Iniciar los servicios
 ```bash
 docker-compose up -d
