@@ -65,7 +65,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/Darkhyrax/night-shop-backend:latest
+    image: ghcr.io/darkhyrax/night_shop-backend:latest
     container_name: night_shop_backend
     environment:
       DB_HOST: postgres
@@ -86,7 +86,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/Darkhyrax/night-shop-frontend:latest
+    image: ghcr.io/darkhyrax/night_shop-frontend:latest
     container_name: night_shop_frontend
     environment:
       REACT_APP_API_URL: http://localhost:3000
