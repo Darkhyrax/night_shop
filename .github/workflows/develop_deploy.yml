@@ -41,6 +41,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: |
+            night-shop-backend/package-lock.json
+            night-shop-frontend/package-lock.json
 
       - name: Install dependencies - Backend
         working-directory: ./night-shop-backend
