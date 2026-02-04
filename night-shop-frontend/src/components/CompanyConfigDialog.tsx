@@ -25,7 +25,6 @@ interface CompanyConfigDialogProps {
 }
 
 const CompanyConfigDialog: React.FC<CompanyConfigDialogProps> = ({ open, onClose }) => {
-  const theme = useTheme();
   const { company, updateCompany, resetCompany } = useCompany();
   const [name, setName] = useState(company.name);
   const [useImage, setUseImage] = useState(company.useImage);

@@ -195,7 +195,7 @@ const Inventory: React.FC = () => {
   const handleEditClick = async (batch: InventoryBatch) => {
     // Verificar si el lote tiene ventas asociadas
     try {
-      const response = await api.get(`/inventory/batches/${batch.id}`);
+      await api.get(`/inventory/batches/${batch.id}`);
       // Si llegamos aquí, el lote existe
       // Abrimos el diálogo de edición con los datos del lote
       setSelectedBatch(batch);

@@ -118,7 +118,6 @@ const CustomerDebtModal: React.FC<CustomerDebtModalProps> = ({
   // Auto-completar campo de Bs cuando se ingresa USD en modo mixto
   const handleUsdChange = (value: number) => {
     const totalDebtUsd = debtsData?.totalDebtUsd || 0;
-    const totalDebtBs = totalDebtUsd * currentExchangeRate;
 
     setPaymentAmountUsd(value);
     if (paymentMethod === 'mixed' && value > 0) {

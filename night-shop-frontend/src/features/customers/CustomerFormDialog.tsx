@@ -72,7 +72,7 @@ const CustomerFormDialog: React.FC<CustomerFormDialogProps> = ({ open, onClose, 
             formik.resetForm();
             setFormError(null);
         }
-    }, [open]);
+    }, [open, formik]);
 
     // Actualizar el error del formulario si viene desde props
     useEffect(() => {
