@@ -115,22 +115,18 @@ export class CustomersService {
             order: { createdAt: 'DESC' },
         });
 
-        console.log(`[DEBUG] Customer ${customerId} has ${accounts.length} pending accounts`);
-
         // Calcular deuda total y obtener información de pagos
         let totalDebtUsd = 0;
         const debtsWithPayments: any[] = [];
 
         for (const account of accounts) {
-            // Filtrar solo ventas a crédito (CREDIT)
-            // Incluir tanto PENDING como COMPLETED si tienen pagos pendientes
+            // Filtrar solo ventas a crédito (CREDIT) que estén PENDING
+            // Solo mostrar deudas reales (venta a crédito + estado PENDING)
             if (
                 !account.sale ||
-                account.sale.saleType !== SaleType.CREDIT
+                account.sale.saleType !== SaleType.CREDIT ||
+                account.sale.status !== SaleStatus.PENDING
             ) {
-                console.log(
-                    `[DEBUG] Account ${account.id} filtered out: saleType=${account.sale?.saleType}, status=${account.sale?.status}`,
-                );
                 continue;
             }
 
@@ -139,11 +135,6 @@ export class CustomersService {
                 where: { customerAccountId: account.id },
                 relations: ['exchangeRate'],
                 order: { createdAt: 'DESC' },
-            });
-
-            console.log(`[DEBUG] Account ${account.id} (Sale ${account.saleId}): Debt ${account.debtUsd}, Payments: ${payments.length}`);
-            payments.forEach((p: any) => {
-                console.log(`  [DEBUG] Payment: amountUsd=${p.amountUsd}, paidInCurrency=${p.paidInCurrency}, amountPaidInOriginalCurrency=${p.amountPaidInOriginalCurrency}`);
             });
 
             // Convertir a número para evitar concatenación de strings
@@ -158,7 +149,6 @@ export class CustomersService {
 
         // Redondear a 2 decimales
         totalDebtUsd = Math.round(totalDebtUsd * 100) / 100;
-        console.log(`[DEBUG] Total debt for customer ${customerId}: ${totalDebtUsd}`);
 
         return {
             customerId,
@@ -173,13 +163,26 @@ export class CustomersService {
         paymentBs: number,
         exchangeRateId?: number,
     ): Promise<any> {
+        // NOTA: Este flujo distribuye el pago entre MÚLTIPLES deudas usando FIFO
+        // Las deudas más antiguas se pagan primero
+        // Diferente a SalesService.addPayment que abona SOLO a una venta específica
+
         // Obtener todas las cuentas pendientes del cliente ordenadas por fecha (más antiguas primero)
         const accounts = await this.customerAccountRepository.find({
             where: { customerId },
+            relations: ['sale'],
             order: { createdAt: 'ASC' }, // FIFO: más antiguas primero
         });
 
-        if (accounts.length === 0) {
+        // Filtrar solo cuentas de ventas PENDING a crédito
+        const pendingAccounts = accounts.filter(
+            (account) =>
+                account.sale &&
+                account.sale.saleType === SaleType.CREDIT &&
+                account.sale.status === SaleStatus.PENDING,
+        );
+
+        if (pendingAccounts.length === 0) {
             throw new NotFoundException(
                 'El cliente no tiene deudas pendientes',
             );
@@ -189,14 +192,13 @@ export class CustomersService {
         let exchangeRate = 267.75; // Valor por defecto
         let currentExchangeRateEntity: ExchangeRate | null = null;
 
-        if (exchangeRateId) {
-            // Buscar la tasa de cambio más reciente
-            currentExchangeRateEntity = await this.exchangeRateRepository.findOne({
-                order: { createdAt: 'DESC' },
-            });
-            if (currentExchangeRateEntity) {
-                exchangeRate = parseFloat(currentExchangeRateEntity.rate.toString());
-            }
+        // Buscar la tasa de cambio más reciente
+        currentExchangeRateEntity = await this.exchangeRateRepository.findOne({
+            where: {},
+            order: { createdAt: 'DESC' },
+        });
+        if (currentExchangeRateEntity) {
+            exchangeRate = parseFloat(currentExchangeRateEntity.rate.toString());
         }
 
         // Convertir pagos a USD equivalente
@@ -207,7 +209,7 @@ export class CustomersService {
         const paymentsCreated: any[] = [];
 
         // Distribuir el pago entre las cuentas (FIFO)
-        for (const account of accounts) {
+        for (const account of pendingAccounts) {
             if (remainingPaymentUsd <= 0) break;
 
             // Calcular cuánto se abona a esta cuenta

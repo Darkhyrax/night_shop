@@ -68,9 +68,9 @@ const CustomersReport: React.FC = () => {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchReports();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const formatCurrency = (value: number, isBs: boolean = false) => {
@@ -102,6 +102,12 @@ const CustomersReport: React.FC = () => {
                             onChange={(e) => setStartDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                             fullWidth
+                            sx={{
+                              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                filter: (theme) => theme.palette.mode === 'dark' ? 'invert(0.8)' : 'invert(0)',
+                                cursor: 'pointer',
+                              }
+                            }}
                         />
                         <TextField
                             label="Fecha Fin"
@@ -110,6 +116,12 @@ const CustomersReport: React.FC = () => {
                             onChange={(e) => setEndDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                             fullWidth
+                            sx={{
+                              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                filter: (theme) => theme.palette.mode === 'dark' ? 'invert(0.8)' : 'invert(0)',
+                                cursor: 'pointer',
+                              }
+                            }}
                         />
                         <Button
                             variant="contained"
@@ -151,7 +163,9 @@ const CustomersReport: React.FC = () => {
                                 <TableContainer component={Paper}>
                                     <Table size="small">
                                         <TableHead>
-                                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                            <TableRow sx={{ 
+                                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                                            }}>
                                                 <TableCell><strong>Cliente</strong></TableCell>
                                                 <TableCell><strong>Email</strong></TableCell>
                                                 <TableCell align="right"><strong>Compras</strong></TableCell>
@@ -193,7 +207,9 @@ const CustomersReport: React.FC = () => {
                                 <TableContainer component={Paper}>
                                     <Table size="small">
                                         <TableHead>
-                                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                            <TableRow sx={{ 
+                                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                                            }}>
                                                 <TableCell><strong>Cliente</strong></TableCell>
                                                 <TableCell><strong>Teléfono</strong></TableCell>
                                                 <TableCell align="right"><strong>Deuda USD</strong></TableCell>

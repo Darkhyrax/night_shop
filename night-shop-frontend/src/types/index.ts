@@ -30,17 +30,18 @@ export enum ChangePaymentMethod {
 
 // Interfaces de entidades
 export interface User {
-  id: ID;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  dni: string;
-  role: UserRole;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  id?: ID;
+  userId?: ID;
+  email?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  dni?: string;
+  role: UserRole | string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Product {
@@ -97,6 +98,8 @@ export interface ExchangeRate {
   isActive: boolean;
   source?: string;
   notes?: string;
+  rateType: 'BCV' | 'CUSTOM';
+  isManuallySet: boolean;
   createdAt: string;
   updatedAt: string;
 }

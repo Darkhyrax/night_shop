@@ -8,11 +8,13 @@ import {
     Delete,
     Query,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { ExchangeRatesService } from './exchange-rates.service';
 import { CreateExchangeRateDto } from './dto/create-exchange-rate.dto';
 import { UpdateExchangeRateDto } from './dto/update-exchange-rate.dto';
 import { BcvRateService } from './bcv-rate.service';
 
+@ApiTags('ExchangeRates')
 @Controller('exchange-rates')
 export class ExchangeRatesController {
     constructor(
@@ -36,11 +38,16 @@ export class ExchangeRatesController {
                 effectiveDate,
                 isActive: true,
                 source: 'BCV',
-                notes: 'Importada automáticamente desde BCV',
+                notes: 'Importada manualmente desde BCV',
+                rateType: 'BCV',
             };
 
             const result = await this.exchangeRatesService.create(dto);
             await this.exchangeRatesService.logSuccessfulSync(rate, 'BCV');
+            // Cambiar a tasa BCV
+            this.exchangeRatesService.setCurrentRateType('BCV');
+            // Invalidar caché para forzar obtener la tasa actualizada
+            this.exchangeRatesService.clearCache();
             return result;
         } catch (error) {
             const errorMessage =
@@ -48,6 +55,50 @@ export class ExchangeRatesController {
             await this.exchangeRatesService.logFailedSync(errorMessage, 'BCV');
             throw error;
         }
+    }
+
+    @Post('custom')
+    async createCustomRate(@Body() createExchangeRateDto: CreateExchangeRateDto) {
+        const dto: CreateExchangeRateDto = {
+            ...createExchangeRateDto,
+            rateType: 'CUSTOM',
+            isManuallySet: true,
+            isActive: true,
+        };
+
+        const result = await this.exchangeRatesService.create(dto);
+        // Cambiar a tasa personalizada
+        this.exchangeRatesService.setCurrentRateType('CUSTOM');
+        // Invalidar caché
+        this.exchangeRatesService.clearCache();
+        return result;
+    }
+
+    @Get('available')
+    async getAvailableRates() {
+        return this.exchangeRatesService.getAvailableRates();
+    }
+
+    @Get('latest-bcv')
+    async getLatestBcvRate() {
+        return this.exchangeRatesService.getLatestBcvRate();
+    }
+
+    @Get('current-type')
+    getCurrentRateType() {
+        return {
+            rateType: this.exchangeRatesService.getCurrentRateType(),
+        };
+    }
+
+    @Post('switch-rate-type')
+    switchRateType(@Body() body: { rateType: 'BCV' | 'CUSTOM' }) {
+        this.exchangeRatesService.setCurrentRateType(body.rateType);
+        this.exchangeRatesService.clearCache();
+        return {
+            message: `Cambiado a tasa ${body.rateType}`,
+            rateType: body.rateType,
+        };
     }
 
     @Get()

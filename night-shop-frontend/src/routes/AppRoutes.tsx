@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoadingScreen from '../components/LoadingScreen';
 
 // Importación de páginas (se crearán después)
 const Login = React.lazy(() => import('../features/auth/Login'));
@@ -23,7 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const { isAuthenticated, isLoading } = useAuth();
 
     if (isLoading) {
-        return <div>Cargando...</div>;
+        return <LoadingScreen />;
     }
 
     if (!isAuthenticated) {
@@ -35,7 +36,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
 const AppRoutes: React.FC = () => {
     return (
-        <React.Suspense fallback={<div>Cargando...</div>}>
+        <React.Suspense fallback={<LoadingScreen />}>
             <Routes>
                 {/* Rutas públicas */}
                 <Route path="/login" element={<Login />} />

@@ -10,7 +10,64 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: nightshop
+          POSTGRES_PASSWORD: nightshop123
+          POSTGRES_DB: night_shop_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies - Backend
+        working-directory: ./night-shop-backend
+        run: npm ci
+
+      - name: Run linter - Backend
+        working-directory: ./night-shop-backend
+        run: npm run lint
+
+      - name: Run tests - Backend
+        working-directory: ./night-shop-backend
+        env:
+          DATABASE_URL: postgres://nightshop:nightshop123@localhost:5432/night_shop_db
+          JWT_SECRET: test-secret-key-for-ci-cd-pipeline
+          NODE_ENV: test
+        run: npm run test
+
+      - name: Install dependencies - Frontend
+        working-directory: ./night-shop-frontend
+        run: npm ci
+
+      - name: Run linter - Frontend
+        working-directory: ./night-shop-frontend
+        run: npm run lint
+
+      - name: Build - Frontend
+        working-directory: ./night-shop-frontend
+        run: npm run build
+
   build-backend:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,6 +108,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-frontend:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

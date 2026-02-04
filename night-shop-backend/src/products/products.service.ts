@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
@@ -13,6 +13,20 @@ export class ProductsService {
     ) {}
 
     async create(createProductDto: CreateProductDto): Promise<Product> {
+        // Verificar si el producto ya existe (por nombre, ignorando mayúsculas/minúsculas)
+        const existingProduct = await this.productsRepository.findOne({
+            where: {
+                name: createProductDto.name,
+                isActive: true,
+            },
+        });
+
+        if (existingProduct) {
+            throw new ConflictException(
+                `El producto "${createProductDto.name}" ya existe`,
+            );
+        }
+
         const product = this.productsRepository.create({
             ...createProductDto,
             currentCostPrice: 0,

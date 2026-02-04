@@ -37,9 +37,11 @@ const ExchangeRateSyncStatus: React.FC = () => {
     const [syncing, setSyncing] = useState(false);
     const [historyModalOpen, setHistoryModalOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [currentRateType, setCurrentRateType] = useState<'BCV' | 'CUSTOM'>('BCV');
 
     useEffect(() => {
         fetchSyncStatus();
+        fetchCurrentRateType();
     }, []);
 
     const fetchSyncStatus = async () => {
@@ -52,6 +54,15 @@ const ExchangeRateSyncStatus: React.FC = () => {
             setError('Error al cargar el estado de sincronización');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchCurrentRateType = async () => {
+        try {
+            const response = await api.get('/exchange-rates/current-type');
+            setCurrentRateType(response.data.rateType);
+        } catch (err) {
+            console.error('Error al obtener tipo de tasa actual:', err);
         }
     };
 
@@ -131,6 +142,7 @@ const ExchangeRateSyncStatus: React.FC = () => {
             >
                 <CardHeader
                     title="Estado de Sincronización de Tasas"
+                    subheader={`Tipo activo: ${currentRateType === 'BCV' ? 'BCV USD' : 'Personalizada'}`}
                     avatar={
                         isFailedSync ? (
                             <ErrorIcon sx={{ color: '#ff9800' }} />

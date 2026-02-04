@@ -49,6 +49,7 @@ export class CreateInventoryBatchDto {
         description: 'Costo total en la moneda seleccionada',
         example: 1000,
     })
+    @Type(() => Number)
     @IsNumber()
     @IsPositive()
     totalCost: number;
@@ -65,6 +66,7 @@ export class CreateInventoryBatchDto {
         description: 'Cantidad inicial en el lote',
         example: 50,
     })
+    @Type(() => Number)
     @IsNumber()
     @IsPositive()
     initialQuantity: number;
@@ -73,6 +75,7 @@ export class CreateInventoryBatchDto {
         description: 'Porcentaje de ganancia (0-100)',
         example: 30,
     })
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     @Max(100)

@@ -20,7 +20,7 @@ import {
 import MainLayout from '../../components/layout/MainLayout';
 import api from '../../services/api';
 import { Product, Sale, SaleStatus } from '../../types';
-import ExchangeRateSyncStatus from './components/ExchangeRateSyncStatus';
+import ExchangeRateConfiguration from './components/ExchangeRateConfiguration';
 
 interface CustomerDebt {
   customerId: string;
@@ -359,8 +359,24 @@ const Dashboard: React.FC = () => {
       <Grid container spacing={3}>
         {/* Fila 1: KPIs Pequeños */}
         <Grid size={{xs: 12, sm: 6, md: 3}}>
-          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 120, backgroundColor: '#e3f2fd', borderLeft: '4px solid #1976d2' }}>
-            <Typography component="h2" variant="h6" sx={{ color: '#1976d2' }} gutterBottom>
+          <Paper sx={{ 
+            p: 2, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: 120, 
+            background: (theme) => theme.palette.mode === 'dark' 
+              ? 'linear-gradient(135deg, rgba(144, 202, 249, 0.15) 0%, rgba(144, 202, 249, 0.08) 100%)'
+              : 'linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.05) 100%)',
+            borderLeft: (theme) => `4px solid ${theme.palette.primary.main}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: (theme) => theme.palette.mode === 'dark'
+                ? '0 12px 24px rgba(144, 202, 249, 0.2)'
+                : '0 12px 24px rgba(25, 118, 210, 0.15)',
+            }
+          }}>
+            <Typography component="h2" variant="h6" sx={{ color: (theme) => theme.palette.primary.main, fontWeight: 700 }} gutterBottom>
               💰 Ventas Hoy
             </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -372,8 +388,24 @@ const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
         <Grid size={{xs: 12, sm: 6, md: 3}}>
-          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 120, backgroundColor: '#f3e5f5', borderLeft: '4px solid #7b1fa2' }}>
-            <Typography component="h2" variant="h6" sx={{ color: '#7b1fa2' }} gutterBottom>
+          <Paper sx={{ 
+            p: 2, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: 120, 
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(244, 143, 177, 0.15) 0%, rgba(244, 143, 177, 0.08) 100%)'
+              : 'linear-gradient(135deg, rgba(220, 0, 78, 0.1) 0%, rgba(220, 0, 78, 0.05) 100%)',
+            borderLeft: (theme) => `4px solid ${theme.palette.secondary.main}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: (theme) => theme.palette.mode === 'dark'
+                ? '0 12px 24px rgba(244, 143, 177, 0.2)'
+                : '0 12px 24px rgba(220, 0, 78, 0.15)',
+            }
+          }}>
+            <Typography component="h2" variant="h6" sx={{ color: (theme) => theme.palette.secondary.main, fontWeight: 700 }} gutterBottom>
               📦 Productos
             </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -385,8 +417,24 @@ const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
         <Grid size={{xs: 12, sm: 6, md: 3}}>
-          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 120, backgroundColor: '#fce4ec', borderLeft: '4px solid #c2185b' }}>
-            <Typography component="h2" variant="h6" sx={{ color: '#c2185b' }} gutterBottom>
+          <Paper sx={{ 
+            p: 2, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: 120, 
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(129, 199, 132, 0.15) 0%, rgba(129, 199, 132, 0.08) 100%)'
+              : 'linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%)',
+            borderLeft: (theme) => `4px solid ${theme.palette.success.main}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: (theme) => theme.palette.mode === 'dark'
+                ? '0 12px 24px rgba(129, 199, 132, 0.2)'
+                : '0 12px 24px rgba(76, 175, 80, 0.15)',
+            }
+          }}>
+            <Typography component="h2" variant="h6" sx={{ color: (theme) => theme.palette.success.main, fontWeight: 700 }} gutterBottom>
               📈 Ventas Mes
             </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -398,11 +446,27 @@ const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
         <Grid size={{xs: 12, sm: 6, md: 3}}>
-          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 120, backgroundColor: '#fff3e0', borderLeft: '4px solid #f57c00' }}>
-            <Typography component="h2" variant="h6" sx={{ color: '#f57c00' }} gutterBottom>
+          <Paper sx={{ 
+            p: 2, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: 120, 
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(255, 180, 77, 0.15) 0%, rgba(255, 180, 77, 0.08) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 152, 0, 0.05) 100%)',
+            borderLeft: (theme) => `4px solid ${theme.palette.warning.main}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: (theme) => theme.palette.mode === 'dark'
+                ? '0 12px 24px rgba(255, 180, 77, 0.2)'
+                : '0 12px 24px rgba(255, 152, 0, 0.15)',
+            }
+          }}>
+            <Typography component="h2" variant="h6" sx={{ color: (theme) => theme.palette.warning.main, fontWeight: 700 }} gutterBottom>
               ⚠️ Deudas
             </Typography>
-            <Typography component="p" variant="h5" sx={{ fontWeight: 'bold', color: '#f57c00' }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 'bold', color: (theme) => theme.palette.warning.main }}>
               {formatCurrency(stats.totalDebtUsd, false)}
             </Typography>
             <Typography color="text.secondary" sx={{ flex: 1, fontSize: '0.875rem' }}>
@@ -411,9 +475,9 @@ const Dashboard: React.FC = () => {
           </Paper>
         </Grid>
 
-        {/* Estado de Sincronización de Tasas */}
+        {/* Configuración de Tasa de Cambio */}
         <Grid size={{xs: 12}}>
-          <ExchangeRateSyncStatus />
+          <ExchangeRateConfiguration />
         </Grid>
 
         {/* Fila 2: Ingresos Hoy y Mes (Desglosado) */}
@@ -506,7 +570,9 @@ const Dashboard: React.FC = () => {
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
-                      <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableRow sx={{ 
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                      }}>
                         <TableCell><strong>Cliente</strong></TableCell>
                         <TableCell align="right"><strong>Deuda USD</strong></TableCell>
                       </TableRow>
@@ -540,7 +606,9 @@ const Dashboard: React.FC = () => {
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
-                      <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableRow sx={{ 
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                      }}>
                         <TableCell><strong>Producto</strong></TableCell>
                         <TableCell align="right"><strong>Stock</strong></TableCell>
                       </TableRow>
@@ -579,7 +647,9 @@ const Dashboard: React.FC = () => {
                 <TableContainer>
                   <Table size="small">
                     <TableHead>
-                      <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableRow sx={{ 
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                      }}>
                         <TableCell><strong>Fecha</strong></TableCell>
                         <TableCell><strong>Monto USD</strong></TableCell>
                         <TableCell><strong>Monto Bs</strong></TableCell>

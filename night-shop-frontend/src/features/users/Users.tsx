@@ -61,12 +61,12 @@ const Users: React.FC = () => {
 
         const term = searchTerm.toLowerCase().trim();
         const filtered = users.filter(user =>
-            user.username.toLowerCase().includes(term) ||
-            user.email.toLowerCase().includes(term) ||
-            user.firstName.toLowerCase().includes(term) ||
-            user.lastName.toLowerCase().includes(term) ||
-            user.dni.toLowerCase().includes(term) ||
-            user.phoneNumber.includes(term)
+            (user.username?.toLowerCase().includes(term) || false) ||
+            (user.email?.toLowerCase().includes(term) || false) ||
+            (user.firstName?.toLowerCase().includes(term) || false) ||
+            (user.lastName?.toLowerCase().includes(term) || false) ||
+            (user.dni?.toLowerCase().includes(term) || false) ||
+            (user.phoneNumber?.includes(term) || false)
         );
 
         setFilteredUsers(filtered);
@@ -130,7 +130,7 @@ const Users: React.FC = () => {
 
     // Eliminar usuario
     const handleDeleteConfirm = async () => {
-        if (!selectedUser) return;
+        if (!selectedUser || !selectedUser.id) return;
 
         setIsLoading(true);
         try {
@@ -155,7 +155,7 @@ const Users: React.FC = () => {
         setShowSuccess(false); // Ocultar alerta de éxito
 
         try {
-            if (selectedUser) {
+            if (selectedUser && selectedUser.id) {
                 // Actualizar usuario existente
                 const updatedUser = await usersApi.update(selectedUser.id, userData);
                 setUsers(users.map(user => user.id === selectedUser.id ? updatedUser : user));
@@ -183,6 +183,7 @@ const Users: React.FC = () => {
 
     // Cambiar estado de activación
     const handleToggleActive = async (user: User) => {
+        if (!user.id) return;
         try {
             const updatedUser = await usersApi.toggleActive(user.id, !user.isActive);
             setUsers(users.map(u => u.id === user.id ? updatedUser : u));
@@ -237,7 +238,9 @@ const Users: React.FC = () => {
                     <TableContainer>
                         <Table>
                             <TableHead>
-                                <TableRow>
+                                <TableRow sx={{ 
+                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                                }}>
                                     <TableCell>Usuario</TableCell>
                                     <TableCell>Nombre</TableCell>
                                     <TableCell>Email</TableCell>

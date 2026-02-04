@@ -48,6 +48,15 @@ export class ExchangeRateSyncScheduler implements OnModuleInit {
     }
 
     async syncExchangeRateDaily() {
+        // Solo sincronizar si el tipo de tasa activa es BCV
+        const currentRateType = this.exchangeRatesService.getCurrentRateType();
+        if (currentRateType === 'CUSTOM') {
+            this.logger.log(
+                'Sincronización automática pausada: Tasa personalizada activa',
+            );
+            return;
+        }
+
         this.logger.log(
             'Iniciando sincronización diaria de tasa de cambio BCV...',
         );
@@ -61,10 +70,13 @@ export class ExchangeRateSyncScheduler implements OnModuleInit {
                 isActive: true,
                 source: 'BCV',
                 notes: 'Importada automáticamente desde BCV (tarea programada)',
+                rateType: 'BCV',
             };
 
             await this.exchangeRatesService.create(dto);
             await this.exchangeRatesService.logSuccessfulSync(rate, 'BCV');
+            // Invalidar caché para forzar obtener la tasa actualizada
+            this.exchangeRatesService.clearCache();
             this.logger.log(`Sincronización exitosa. Nueva tasa: ${rate}`);
         } catch (error) {
             const errorMessage =

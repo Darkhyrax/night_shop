@@ -11,6 +11,7 @@ export class ExchangeRatesService {
     private cachedRate: ExchangeRate | null = null;
     private cacheTimestamp: number = 0;
     private readonly CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutos
+    private currentRateType: 'BCV' | 'CUSTOM' = 'BCV'; // Tipo de tasa activa
 
     constructor(
         @InjectRepository(ExchangeRate)
@@ -18,6 +19,22 @@ export class ExchangeRatesService {
         @InjectRepository(ExchangeRateSyncLog)
         private syncLogRepository: Repository<ExchangeRateSyncLog>,
     ) {}
+
+    // Obtener tipo de tasa activa
+    getCurrentRateType(): 'BCV' | 'CUSTOM' {
+        return this.currentRateType;
+    }
+
+    // Cambiar tipo de tasa activa
+    setCurrentRateType(rateType: 'BCV' | 'CUSTOM'): void {
+        this.currentRateType = rateType;
+    }
+
+    // Método para invalidar el caché
+    clearCache(): void {
+        this.cachedRate = null;
+        this.cacheTimestamp = 0;
+    }
 
     async create(
         createExchangeRateDto: CreateExchangeRateDto,
@@ -77,13 +94,16 @@ export class ExchangeRatesService {
     async getCurrentRate(): Promise<ExchangeRate> {
         // Verificar si el caché es válido
         const now = Date.now();
-        if (this.cachedRate && (now - this.cacheTimestamp) < this.CACHE_DURATION_MS) {
+        if (
+            this.cachedRate &&
+            now - this.cacheTimestamp < this.CACHE_DURATION_MS
+        ) {
             return this.cachedRate;
         }
 
-        // Primero intentamos obtener la tasa marcada como activa
+        // Obtener tasa activa del tipo configurado
         const rate = await this.exchangeRateRepository.findOne({
-            where: { isActive: true },
+            where: { isActive: true, rateType: this.currentRateType },
             order: { effectiveDate: 'DESC' },
         });
 
@@ -94,15 +114,16 @@ export class ExchangeRatesService {
             return rate;
         }
 
-        // Si no hay tasa activa, buscamos la más reciente por fecha
+        // Si no hay tasa activa del tipo configurado, buscamos la más reciente del mismo tipo
         const [latestRate] = await this.exchangeRateRepository.find({
+            where: { rateType: this.currentRateType },
             order: { effectiveDate: 'DESC' },
             take: 1,
         });
 
         if (!latestRate) {
             throw new NotFoundException(
-                'No exchange rates found in the system',
+                `No exchange rates found for type ${this.currentRateType}`,
             );
         }
 
@@ -110,6 +131,59 @@ export class ExchangeRatesService {
         this.cachedRate = latestRate;
         this.cacheTimestamp = now;
         return latestRate;
+    }
+
+    // Obtener tasa activa por tipo específico
+    async getRateByType(rateType: 'BCV' | 'CUSTOM'): Promise<ExchangeRate> {
+        const rate = await this.exchangeRateRepository.findOne({
+            where: { isActive: true, rateType },
+            order: { effectiveDate: 'DESC' },
+        });
+
+        if (rate) {
+            return rate;
+        }
+
+        // Si no hay tasa activa, obtener la más reciente del tipo
+        const [latestRate] = await this.exchangeRateRepository.find({
+            where: { rateType },
+            order: { effectiveDate: 'DESC' },
+            take: 1,
+        });
+
+        if (!latestRate) {
+            throw new NotFoundException(
+                `No exchange rates found for type ${rateType}`,
+            );
+        }
+
+        return latestRate;
+    }
+
+    // Obtener todas las tasas disponibles (BCV y CUSTOM)
+    async getAvailableRates(): Promise<{
+        bcv: ExchangeRate | null;
+        custom: ExchangeRate | null;
+    }> {
+        const bcv = await this.exchangeRateRepository.findOne({
+            where: { isActive: true, rateType: 'BCV' },
+            order: { effectiveDate: 'DESC' },
+        });
+
+        const custom = await this.exchangeRateRepository.findOne({
+            where: { isActive: true, rateType: 'CUSTOM' },
+            order: { effectiveDate: 'DESC' },
+        });
+
+        return { bcv, custom };
+    }
+
+    // Obtener la última tasa BCV guardada (activa o no)
+    async getLatestBcvRate(): Promise<ExchangeRate | null> {
+        return this.exchangeRateRepository.findOne({
+            where: { rateType: 'BCV' },
+            order: { effectiveDate: 'DESC' },
+        });
     }
 
     async getRateByDate(date: Date): Promise<ExchangeRate> {

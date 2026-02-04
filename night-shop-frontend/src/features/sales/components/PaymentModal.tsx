@@ -20,6 +20,9 @@ import {
   TableRow,
   Tabs,
   Tab,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from '@mui/material';
 import { Sale } from '../../../types';
 import api from '../../../services/api';
@@ -39,6 +42,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
   const [success, setSuccess] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [currentExchangeRate, setCurrentExchangeRate] = useState<number>(1);
+  const [paymentMethod, setPaymentMethod] = useState<'usd' | 'bs' | 'mixed'>('usd');
 
   // Resetear estado cuando se abre/cierra el modal
   React.useEffect(() => {
@@ -48,6 +52,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
       setPaymentAmountUsd(0);
       setPaymentAmountBs(0);
       setTabValue(0);
+      setPaymentMethod('usd');
     } else {
       // Obtener la tasa de cambio actual cuando se abre el modal
       const fetchCurrentRate = async () => {
@@ -116,6 +121,48 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
   // Calcular deuda pendiente
   const debtUsd = Math.max(0, sale.totalAmountUsd - totalPaidUsd);
   const debtBs = Math.max(0, sale.totalAmountBs - (totalPaidUsd * (sale.exchangeRate?.rate || 1)));
+
+  // Función para pagar todo
+  const handlePayAll = () => {
+    if (paymentMethod === 'usd') {
+      setPaymentAmountUsd(debtUsd);
+      setPaymentAmountBs(0);
+    } else if (paymentMethod === 'bs') {
+      setPaymentAmountUsd(0);
+      setPaymentAmountBs(debtBs);
+    } else if (paymentMethod === 'mixed') {
+      setPaymentAmountUsd(debtUsd);
+      setPaymentAmountBs(0);
+    }
+  };
+
+  // Auto-completar campo de Bs cuando se ingresa USD en modo mixto
+  const handleUsdChange = (value: number) => {
+    setPaymentAmountUsd(value);
+    if (paymentMethod === 'mixed' && value > 0) {
+      const remainingDebt = debtUsd - value;
+      if (remainingDebt > 0) {
+        const remainingBs = remainingDebt * currentExchangeRate;
+        setPaymentAmountBs(Math.round(remainingBs * 100) / 100);
+      } else {
+        setPaymentAmountBs(0);
+      }
+    }
+  };
+
+  // Auto-completar campo de USD cuando se ingresa Bs en modo mixto
+  const handleBsChange = (value: number) => {
+    setPaymentAmountBs(value);
+    if (paymentMethod === 'mixed' && value > 0) {
+      const remainingDebt = debtBs - value;
+      if (remainingDebt > 0) {
+        const remainingUsd = remainingDebt / currentExchangeRate;
+        setPaymentAmountUsd(Math.round(remainingUsd * 100) / 100);
+      } else {
+        setPaymentAmountUsd(0);
+      }
+    }
+  };
 
   const handlePayment = async () => {
     try {
@@ -187,7 +234,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                 Deuda Pendiente
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <Paper sx={{ p: 2, backgroundColor: '#fff3e0' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`
+                }}>
                   <Typography variant="caption" color="textSecondary">
                     Deuda USD
                   </Typography>
@@ -195,7 +246,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                     {formatCurrency(debtUsd, false)}
                   </Typography>
                 </Paper>
-                <Paper sx={{ p: 2, backgroundColor: '#e3f2fd' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+                }}>
                   <Typography variant="caption" color="textSecondary">
                     Tasa del Día
                   </Typography>
@@ -213,27 +268,115 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
                 Registrar Abono
               </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Abonar en USD"
-                  type="number"
-                  value={paymentAmountUsd}
-                  onChange={(e) => setPaymentAmountUsd(parseFloat(e.target.value) || 0)}
-                  inputProps={{ step: '0.01', min: '0', max: debtUsd }}
-                  disabled={loading}
-                />
-                <TextField
-                  fullWidth
-                  label="Abonar en Bs"
-                  type="number"
-                  value={paymentAmountBs}
-                  onChange={(e) => setPaymentAmountBs(parseFloat(e.target.value) || 0)}
-                  inputProps={{ step: '0.01', min: '0', max: debtBs }}
-                  disabled={loading}
-                />
+
+              {/* Selector de método de pago */}
+              <Box sx={{ 
+                mb: 3, 
+                p: 2, 
+                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5', 
+                borderRadius: 1,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+                  ¿Cómo paga?
+                </Typography>
+                <RadioGroup
+                  row
+                  value={paymentMethod}
+                  onChange={(e) => {
+                    setPaymentMethod(e.target.value as 'usd' | 'bs' | 'mixed');
+                    setPaymentAmountUsd(0);
+                    setPaymentAmountBs(0);
+                  }}
+                >
+                  <FormControlLabel
+                    value="usd"
+                    control={<Radio size="small" />}
+                    label={`En USD - Deuda: $${debtUsd.toFixed(2)}`}
+                  />
+                  <FormControlLabel
+                    value="bs"
+                    control={<Radio size="small" />}
+                    label={`En Bs - Deuda: Bs. ${debtBs.toFixed(2)}`}
+                  />
+                  <FormControlLabel
+                    value="mixed"
+                    control={<Radio size="small" />}
+                    label="Mixto (USD + Bs)"
+                  />
+                </RadioGroup>
               </Box>
-              <Box sx={{ mt: 2, p: 2, backgroundColor: '#f0f0f0', borderRadius: 1 }}>
+
+              {/* Campos de pago según método seleccionado */}
+              {paymentMethod === 'usd' && (
+                <Box sx={{ mb: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Monto en USD"
+                    type="number"
+                    value={paymentAmountUsd === 0 ? '' : paymentAmountUsd}
+                    onChange={(e) => setPaymentAmountUsd(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                    inputProps={{ step: '0.01', min: '0', max: debtUsd }}
+                    disabled={loading}
+                  />
+                </Box>
+              )}
+
+              {paymentMethod === 'bs' && (
+                <Box sx={{ mb: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Monto en Bolívares"
+                    type="number"
+                    value={paymentAmountBs === 0 ? '' : paymentAmountBs}
+                    onChange={(e) => setPaymentAmountBs(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                    inputProps={{ step: '0.01', min: '0', max: debtBs }}
+                    disabled={loading}
+                  />
+                </Box>
+              )}
+
+              {paymentMethod === 'mixed' && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Monto en USD"
+                    type="number"
+                    value={paymentAmountUsd === 0 ? '' : paymentAmountUsd}
+                    onChange={(e) => handleUsdChange(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                    inputProps={{ step: '0.01', min: '0', max: debtUsd }}
+                    disabled={loading}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Monto en Bs"
+                    type="number"
+                    value={paymentAmountBs === 0 ? '' : paymentAmountBs}
+                    onChange={(e) => handleBsChange(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                    inputProps={{ step: '0.01', min: '0', max: debtBs }}
+                    disabled={loading}
+                  />
+                </Box>
+              )}
+
+              {/* Botón Pagar Todo */}
+              <Button
+                fullWidth
+                variant="outlined"
+                color="success"
+                onClick={handlePayAll}
+                disabled={loading}
+                sx={{ mb: 2 }}
+              >
+                💰 Pagar Todo
+              </Button>
+              <Box sx={{ 
+                mt: 2, 
+                p: 2, 
+                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f0f0f0', 
+                borderRadius: 1,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+              }}>
                 <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
                   Total a abonar:
                 </Typography>
@@ -251,31 +394,47 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                 Información de la Venta
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f9f9f9',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <Typography variant="caption" color="textSecondary">
                     Total Original USD
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     {formatCurrency(sale.totalAmountUsd, false)}
                   </Typography>
                 </Paper>
-                <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f9f9f9',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <Typography variant="caption" color="textSecondary">
                     Total Original Bs
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     {formatCurrency(sale.totalAmountBs, true)}
                   </Typography>
                 </Paper>
-                <Paper sx={{ p: 2, backgroundColor: '#e8f5e9' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+                }}>
                   <Typography variant="caption" color="textSecondary">
                     Total Abonado USD
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     {formatCurrency(totalPaidUsd, false)}
                   </Typography>
                 </Paper>
-                <Paper sx={{ p: 2, backgroundColor: '#fff3e0' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`
+                }}>
                   <Typography variant="caption" color="textSecondary">
                     Deuda Pendiente USD
                   </Typography>
@@ -302,7 +461,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                     <TableContainer component={Paper}>
                       <Table size="small">
                         <TableHead>
-                          <TableRow sx={{ backgroundColor: '#e8f5e9' }}>
+                          <TableRow sx={{ 
+                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : '#e8f5e9'
+                          }}>
                             <TableCell>Fecha</TableCell>
                             <TableCell align="right">Moneda</TableCell>
                             <TableCell align="right">Monto Pagado</TableCell>
@@ -329,7 +490,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                         </TableBody>
                       </Table>
                     </TableContainer>
-                    <Box sx={{ mt: 1, p: 2, backgroundColor: '#e8f5e9', borderRadius: 1 }}>
+                    <Box sx={{ 
+                      mt: 1, 
+                      p: 2, 
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9', 
+                      borderRadius: 1,
+                      border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+                    }}>
                       <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
                         Subtotal Abonado al Crear:
                       </Typography>
@@ -349,7 +516,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                     <TableContainer component={Paper}>
                       <Table size="small">
                         <TableHead>
-                          <TableRow sx={{ backgroundColor: '#e3f2fd' }}>
+                          <TableRow sx={{ 
+                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : '#e3f2fd'
+                          }}>
                             <TableCell>Fecha</TableCell>
                             <TableCell align="right">Moneda</TableCell>
                             <TableCell align="right">Monto Pagado</TableCell>
@@ -376,7 +545,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                         </TableBody>
                       </Table>
                     </TableContainer>
-                    <Box sx={{ mt: 1, p: 2, backgroundColor: '#e3f2fd', borderRadius: 1 }}>
+                    <Box sx={{ 
+                      mt: 1, 
+                      p: 2, 
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd', 
+                      borderRadius: 1,
+                      border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+                    }}>
                       <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
                         Subtotal Abonado Posteriormente:
                       </Typography>
@@ -388,7 +563,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
                 )}
 
                 {/* Total General */}
-                <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1, border: '2px solid #ddd' }}>
+                <Box sx={{ 
+                  p: 2, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5', 
+                  borderRadius: 1, 
+                  border: (theme) => theme.palette.mode === 'dark' ? '2px solid rgba(255, 255, 255, 0.2)' : '2px solid #ddd'
+                }}>
                   <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
                     Total Abonado en esta Compra:
                   </Typography>
@@ -406,7 +586,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, sale, onPaym
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+        <Button 
+          onClick={onClose} 
+          disabled={loading}
+          variant="outlined"
+          sx={{
+            color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+            '&:hover': {
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
+        >
           Cancelar
         </Button>
         <Button

@@ -83,7 +83,13 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             )}
           </Box>
           {sale.exchangeRate && (
-            <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+            <Box sx={{ 
+              mt: 2, 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5', 
+              borderRadius: 1,
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+            }}>
               <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
                 TASA DE CAMBIO DEL DÍA
               </Typography>
@@ -109,7 +115,9 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableRow sx={{ 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                }}>
                   <TableCell>Producto</TableCell>
                   <TableCell align="right">Cantidad</TableCell>
                   <TableCell align="right">Precio USD</TableCell>
@@ -140,7 +148,11 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             Resumen de Pago
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-            <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+            <Paper sx={{ 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f9f9f9',
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+            }}>
               <Typography variant="caption" color="textSecondary">
                 Total USD
               </Typography>
@@ -148,7 +160,11 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
                 {formatCurrency(sale.totalAmountUsd, false)}
               </Typography>
             </Paper>
-            <Paper sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
+            <Paper sx={{ 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f9f9f9',
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+            }}>
               <Typography variant="caption" color="textSecondary">
                 Total Bs
               </Typography>
@@ -165,19 +181,27 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             Pagos Realizados
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-            <Paper sx={{ p: 2, backgroundColor: '#e3f2fd' }}>
+            <Paper sx={{ 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd',
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+            }}>
               <Typography variant="caption" color="textSecondary">
                 Pagado USD
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(sale.paidAmountUsd, false)}
               </Typography>
             </Paper>
-            <Paper sx={{ p: 2, backgroundColor: '#e3f2fd' }}>
+            <Paper sx={{ 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd',
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+            }}>
               <Typography variant="caption" color="textSecondary">
                 Pagado Bs
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 {formatCurrency(sale.paidAmountBs, true)}
               </Typography>
             </Paper>
@@ -193,7 +217,9 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             <TableContainer component={Paper}>
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableRow sx={{ 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                  }}>
                     <TableCell>Moneda</TableCell>
                     <TableCell align="right">Monto Pagado</TableCell>
                     <TableCell align="right">Equivalente USD</TableCell>
@@ -232,7 +258,9 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             <TableContainer component={Paper}>
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableRow sx={{ 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                  }}>
                     <TableCell>Moneda</TableCell>
                     <TableCell align="right">Monto Pagado</TableCell>
                     <TableCell align="right">Equivalente USD</TableCell>
@@ -270,7 +298,13 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             </Typography>
             
             {/* Total a Retornar en USD */}
-            <Box sx={{ mb: 2, p: 2, backgroundColor: '#e8f5e9', borderRadius: 1 }}>
+            <Box sx={{ 
+              mb: 2, 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9', 
+              borderRadius: 1,
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+            }}>
               <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', display: 'block', mb: 2 }}>
                 TOTAL A RETORNAR
               </Typography>
@@ -284,7 +318,12 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
               </Box>
 
               {/* Desglose */}
-              <Box sx={{ p: 1.5, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 0.5 }}>
+              <Box sx={{ 
+                p: 1.5, 
+                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255,255,255,0.5)', 
+                borderRadius: 0.5,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(76, 175, 80, 0.1)'}`
+              }}>
                 <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
                   Desglose:
                 </Typography>
@@ -311,14 +350,29 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ open, onClose, sale
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
               Notas
             </Typography>
-            <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+            <Paper sx={{ 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#fafafa',
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+            }}>
               <Typography variant="body2">{sale.notes}</Typography>
             </Paper>
           </Box>
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} variant="contained">
+        <Button 
+          onClick={onClose} 
+          variant="outlined"
+          sx={{
+            color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+            '&:hover': {
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
+        >
           Cerrar
         </Button>
       </DialogActions>

@@ -80,9 +80,9 @@ const SalesReport: React.FC = () => {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchReports();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const formatCurrency = (value: number | null | undefined, isBs: boolean = false) => {
@@ -245,6 +245,12 @@ const SalesReport: React.FC = () => {
                             onChange={(e) => setStartDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                             fullWidth
+                            sx={{
+                              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                filter: (theme) => theme.palette.mode === 'dark' ? 'invert(0.8)' : 'invert(0)',
+                                cursor: 'pointer',
+                              }
+                            }}
                         />
                         <TextField
                             label="Fecha Fin"
@@ -253,6 +259,12 @@ const SalesReport: React.FC = () => {
                             onChange={(e) => setEndDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                             fullWidth
+                            sx={{
+                              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                filter: (theme) => theme.palette.mode === 'dark' ? 'invert(0.8)' : 'invert(0)',
+                                cursor: 'pointer',
+                              }
+                            }}
                         />
                         <Button
                             variant="contained"
@@ -302,7 +314,12 @@ const SalesReport: React.FC = () => {
                             <CardHeader title="📈 Resumen de Ventas" />
                             <CardContent>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2 }}>
-                                <Box sx={{ p: 2, backgroundColor: '#e3f2fd', borderRadius: 1 }}>
+                                <Box sx={{ 
+                                  p: 2, 
+                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd', 
+                                  borderRadius: 1,
+                                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+                                }}>
                                     <Typography variant="caption" color="textSecondary">
                                         Total de Ventas
                                     </Typography>
@@ -311,7 +328,12 @@ const SalesReport: React.FC = () => {
                                         {summary.completedSales} completadas, {summary.pendingSales} pendientes
                                     </Typography>
                                 </Box>
-                                <Box sx={{ p: 2, backgroundColor: '#f3e5f5', borderRadius: 1 }}>
+                                <Box sx={{ 
+                                  p: 2, 
+                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.15)' : '#f3e5f5', 
+                                  borderRadius: 1,
+                                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(156, 39, 176, 0.2)'}`
+                                }}>
                                     <Typography variant="caption" color="textSecondary">
                                         Ventas por Tipo
                                     </Typography>
@@ -322,7 +344,12 @@ const SalesReport: React.FC = () => {
                                         Contado / Crédito
                                     </Typography>
                                 </Box>
-                                <Box sx={{ p: 2, backgroundColor: '#e8f5e9', borderRadius: 1 }}>
+                                <Box sx={{ 
+                                  p: 2, 
+                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9', 
+                                  borderRadius: 1,
+                                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+                                }}>
                                     <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 'bold' }}>
                                         Ingresos USD Esperado
                                     </Typography>
@@ -332,14 +359,23 @@ const SalesReport: React.FC = () => {
                                     <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.75rem', display: 'block', mb: 1 }}>
                                         Ingreso Real en USD:
                                     </Typography>
-                                    <Box sx={{ pl: 1, borderLeft: '3px solid #2e7d32' }}>
+                                    <Box sx={{ 
+                                      pl: 1, 
+                                      borderLeft: (theme) => `3px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.6)' : '#2e7d32'}`
+                                    }}>
                                         <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block' }}>
                                             En USD: {formatCurrency(summary.paidUsd, false)}
                                         </Typography>
                                         <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', display: 'block', mt: 0.5 }}>
                                             En Bs: {formatCurrency(summary.paidBs, true)} = {formatCurrency(summary.paidBs / currentExchangeRate, false)}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ fontSize: '0.7rem', display: 'block', fontWeight: 'bold', color: '#2e7d32', mt: 0.5 }}>
+                                        <Typography variant="caption" sx={{ 
+                                          fontSize: '0.7rem', 
+                                          display: 'block', 
+                                          fontWeight: 'bold', 
+                                          color: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.8)' : '#2e7d32', 
+                                          mt: 0.5 
+                                        }}>
                                             Total: {formatCurrency(summary.paidUsd + (summary.paidBs / currentExchangeRate), false)}
                                         </Typography>
                                     </Box>
@@ -362,7 +398,9 @@ const SalesReport: React.FC = () => {
                                 <TableContainer component={Paper}>
                                     <Table size="small">
                                         <TableHead>
-                                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                            <TableRow sx={{ 
+                                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                                            }}>
                                                 <TableCell><strong>ID</strong></TableCell>
                                                 <TableCell><strong>Fecha</strong></TableCell>
                                                 <TableCell align="right"><strong>Total USD</strong></TableCell>

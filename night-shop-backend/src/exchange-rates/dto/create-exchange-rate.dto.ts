@@ -53,4 +53,23 @@ export class CreateExchangeRateDto {
     @IsOptional()
     @IsString()
     notes?: string;
+
+    @ApiProperty({
+        description: 'Tipo de tasa: BCV (automática) o CUSTOM (manual)',
+        example: 'BCV',
+        required: false,
+        enum: ['BCV', 'CUSTOM'],
+    })
+    @IsOptional()
+    @IsString()
+    rateType?: 'BCV' | 'CUSTOM';
+
+    @ApiProperty({
+        description: 'Indica si fue establecida manualmente',
+        example: false,
+        required: false,
+    })
+    @IsOptional()
+    @IsBoolean()
+    isManuallySet?: boolean;
 }

@@ -19,6 +19,11 @@ export class ReportsService {
         private customerAccountRepository: Repository<CustomerAccount>,
     ) {}
 
+    private parseDate(dateString: string): string {
+        // Retornar la fecha en formato YYYY-MM-DD para usar con DATE() en PostgreSQL
+        return dateString;
+    }
+
     // Reportes de Ventas
     async getSalesReport(
         startDate?: string,
@@ -33,17 +38,21 @@ export class ReportsService {
             .leftJoinAndSelect('saleDetails.product', 'product');
 
         if (startDate && endDate) {
-            query.where('sale.createdAt BETWEEN :startDate AND :endDate', {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+            const start = this.parseDate(startDate);
+            const end = this.parseDate(endDate);
+            query.where('DATE(sale.createdAt) BETWEEN :startDate AND :endDate', {
+                startDate: start,
+                endDate: end,
             });
         } else if (startDate) {
-            query.where('sale.createdAt >= :startDate', {
-                startDate: new Date(startDate),
+            const start = this.parseDate(startDate);
+            query.where('DATE(sale.createdAt) >= :startDate', {
+                startDate: start,
             });
         } else if (endDate) {
-            query.where('sale.createdAt <= :endDate', {
-                endDate: new Date(endDate),
+            const end = this.parseDate(endDate);
+            query.where('DATE(sale.createdAt) <= :endDate', {
+                endDate: end,
             });
         }
 
@@ -67,17 +76,17 @@ export class ReportsService {
         const query = this.salesRepository.createQueryBuilder('sale');
 
         if (startDate && endDate) {
-            query.where('sale.createdAt BETWEEN :startDate AND :endDate', {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+            query.where('DATE(sale.createdAt) BETWEEN :startDate AND :endDate', {
+                startDate: this.parseDate(startDate),
+                endDate: this.parseDate(endDate),
             });
         } else if (startDate) {
-            query.where('sale.createdAt >= :startDate', {
-                startDate: new Date(startDate),
+            query.where('DATE(sale.createdAt) >= :startDate', {
+                startDate: this.parseDate(startDate),
             });
         } else if (endDate) {
-            query.where('sale.createdAt <= :endDate', {
-                endDate: new Date(endDate),
+            query.where('DATE(sale.createdAt) <= :endDate', {
+                endDate: this.parseDate(endDate),
             });
         }
 
@@ -89,17 +98,17 @@ export class ReportsService {
             .leftJoinAndSelect('account.payments', 'payments');
 
         if (startDate && endDate) {
-            accountsQuery.where('account.createdAt BETWEEN :startDate AND :endDate', {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+            accountsQuery.where('DATE(account.createdAt) BETWEEN :startDate AND :endDate', {
+                startDate: this.parseDate(startDate),
+                endDate: this.parseDate(endDate),
             });
         } else if (startDate) {
-            accountsQuery.where('account.createdAt >= :startDate', {
-                startDate: new Date(startDate),
+            accountsQuery.where('DATE(account.createdAt) >= :startDate', {
+                startDate: this.parseDate(startDate),
             });
         } else if (endDate) {
-            accountsQuery.where('account.createdAt <= :endDate', {
-                endDate: new Date(endDate),
+            accountsQuery.where('DATE(account.createdAt) <= :endDate', {
+                endDate: this.parseDate(endDate),
             });
         }
 
@@ -172,17 +181,17 @@ export class ReportsService {
             .leftJoinAndSelect('saleDetails.product', 'product');
 
         if (startDate && endDate) {
-            query.where('sale.createdAt BETWEEN :startDate AND :endDate', {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+            query.where('DATE(sale.createdAt) BETWEEN :startDate AND :endDate', {
+                startDate: this.parseDate(startDate),
+                endDate: this.parseDate(endDate),
             });
         } else if (startDate) {
-            query.where('sale.createdAt >= :startDate', {
-                startDate: new Date(startDate),
+            query.where('DATE(sale.createdAt) >= :startDate', {
+                startDate: this.parseDate(startDate),
             });
         } else if (endDate) {
-            query.where('sale.createdAt <= :endDate', {
-                endDate: new Date(endDate),
+            query.where('DATE(sale.createdAt) <= :endDate', {
+                endDate: this.parseDate(endDate),
             });
         }
 
@@ -260,17 +269,17 @@ export class ReportsService {
             .leftJoinAndSelect('customer.sales', 'sales');
 
         if (startDate && endDate) {
-            query.where('sales.createdAt BETWEEN :startDate AND :endDate', {
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+            query.where('DATE(sales.createdAt) BETWEEN :startDate AND :endDate', {
+                startDate: this.parseDate(startDate),
+                endDate: this.parseDate(endDate),
             });
         } else if (startDate) {
-            query.where('sales.createdAt >= :startDate', {
-                startDate: new Date(startDate),
+            query.where('DATE(sales.createdAt) >= :startDate', {
+                startDate: this.parseDate(startDate),
             });
         } else if (endDate) {
-            query.where('sales.createdAt <= :endDate', {
-                endDate: new Date(endDate),
+            query.where('DATE(sales.createdAt) <= :endDate', {
+                endDate: this.parseDate(endDate),
             });
         }
 
@@ -314,5 +323,30 @@ export class ReportsService {
                 sellingPrice: p.currentSellingPrice,
             }))
             .sort((a, b) => a.currentStock - b.currentStock);
+    }
+
+    async debugSalesDates() {
+        const sales = await this.salesRepository
+            .createQueryBuilder('sale')
+            .select('sale.id', 'id')
+            .addSelect('sale.createdAt', 'createdAt')
+            .orderBy('sale.createdAt', 'DESC')
+            .limit(10)
+            .getRawMany();
+
+        console.log('[DEBUG] Last 10 sales dates:');
+        sales.forEach((sale: any) => {
+            console.log(`  - Sale ${sale.id}: ${sale.createdAt}`);
+        });
+
+        return {
+            message: 'Check console for dates',
+            count: sales.length,
+            sales: sales.map((s: any) => ({
+                id: s.id,
+                createdAt: s.createdAt,
+                createdAtISO: new Date(s.createdAt).toISOString(),
+            })),
+        };
     }
 }

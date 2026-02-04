@@ -2,15 +2,31 @@ import './polyfills';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as express from 'express';
 import { AppModule } from './app.module';
 import { AdminUserSeeder } from './seeders/admin-user.seeder';
 import { CustomerSeeder } from './seeders/customer.seeder';
 import { DataSource } from 'typeorm';
+import { validateSecurityConfig } from './config/security.config';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
+
+    // Validar configuración de seguridad
+    try {
+        validateSecurityConfig();
+    } catch (error: any) {
+        logger.error(`Security validation failed: ${error.message}`);
+        process.exit(1);
+    }
+
     const app = await NestFactory.create(AppModule);
     app.setGlobalPrefix('api');
+
+    // Aumentar límite de payload para imágenes
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,

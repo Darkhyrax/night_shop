@@ -4,6 +4,7 @@ import { Sale } from './entities/sale.entity';
 import { SaleDetail } from './entities/sale-detail.entity';
 import { SalesService } from './sales.service';
 import { SalesController } from './sales.controller';
+import { FixSaleStatusService } from './fix-sale-status.service';
 import { UsersModule } from '../users/users.module';
 import { ProductsModule } from '../products/products.module';
 import { InventoryModule } from '../inventory/inventory.module';
@@ -21,7 +22,7 @@ import { CustomerAccount } from '../customers/entities/customer-account.entity';
         CustomersModule,
         ExchangeRatesModule,
     ],
-    providers: [SalesService],
+    providers: [SalesService, FixSaleStatusService],
     controllers: [SalesController],
     exports: [SalesService],
 })

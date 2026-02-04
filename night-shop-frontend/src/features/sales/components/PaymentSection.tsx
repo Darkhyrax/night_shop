@@ -37,7 +37,11 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
       <Grid container spacing={3} sx={{ mb: 3 }}>
         {/* Totales */}
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Paper sx={{ p: 2, backgroundColor: '#f5f5f5' }}>
+          <Paper sx={{ 
+            p: 2, 
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
+            border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+          }}>
             <Typography variant="body2" color="textSecondary" gutterBottom>
               Total a Pagar
             </Typography>
@@ -52,7 +56,11 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
 
         {/* Pagado */}
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Paper sx={{ p: 2, backgroundColor: '#e8f5e9' }}>
+          <Paper sx={{ 
+            p: 2, 
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9',
+            border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+          }}>
             <Typography variant="body2" color="textSecondary" gutterBottom>
               Pagado
             </Typography>
