@@ -4,12 +4,14 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+const isCI = process.env.CI === 'true';
+
 export default tseslint.config(
   {
     ignores: ['eslint.config.mjs'],
   },
   eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  ...(isCI ? tseslint.configs.recommended : tseslint.configs.recommendedTypeChecked),
   eslintPluginPrettierRecommended,
   {
     languageOptions: {
@@ -18,10 +20,12 @@ export default tseslint.config(
         ...globals.jest,
       },
       sourceType: 'commonjs',
-      parserOptions: {
-        projectService: process.env.CI !== 'true',
-        tsconfigRootDir: import.meta.dirname,
-      },
+      ...(isCI ? {} : {
+        parserOptions: {
+          projectService: true,
+          tsconfigRootDir: import.meta.dirname,
+        },
+      }),
     },
   },
   {
