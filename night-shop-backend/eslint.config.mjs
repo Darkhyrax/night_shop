@@ -38,8 +38,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': isCI ? 'off' : 'warn',
       '@typescript-eslint/no-unsafe-enum-comparison': isCI ? 'off' : 'warn',
       '@typescript-eslint/no-floating-promises': isCI ? 'off' : 'warn',
+      '@typescript-eslint/require-await': isCI ? 'off' : 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/require-await': 'warn',
     },
   },
 );
