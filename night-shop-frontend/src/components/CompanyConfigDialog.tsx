@@ -14,7 +14,6 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  useTheme,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useCompany } from '../context/CompanyContext';
