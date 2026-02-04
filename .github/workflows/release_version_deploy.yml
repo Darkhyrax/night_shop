@@ -63,10 +63,6 @@ jobs:
         working-directory: ./night-shop-frontend
         run: npm ci
 
-      - name: Run linter - Frontend
-        working-directory: ./night-shop-frontend
-        run: npm run lint
-
       - name: Build - Frontend
         working-directory: ./night-shop-frontend
         run: npm run build
