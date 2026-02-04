@@ -98,6 +98,7 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({ open, onClose, onSave, 
             formik.resetForm();
             setFormError(null);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     // Actualizar el error del formulario si viene desde props
@@ -262,7 +263,19 @@ const UserFormDialog: React.FC<UserFormDialogProps> = ({ open, onClose, onSave, 
                         </Grid>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={onClose} disabled={isLoading}>
+                        <Button 
+                          onClick={onClose} 
+                          disabled={isLoading}
+                          variant="outlined"
+                          sx={{
+                            color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+                            '&:hover': {
+                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                            }
+                          }}
+                        >
                             Cancelar
                         </Button>
                         <Button type="submit" variant="contained" color="primary" disabled={isLoading}>

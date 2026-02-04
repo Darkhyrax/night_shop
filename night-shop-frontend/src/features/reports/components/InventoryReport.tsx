@@ -48,9 +48,9 @@ const InventoryReport: React.FC = () => {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchProducts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const formatCurrency = (value: number) => {
@@ -118,7 +118,9 @@ const InventoryReport: React.FC = () => {
                             <TableContainer component={Paper}>
                                 <Table size="small">
                                     <TableHead>
-                                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                        <TableRow sx={{ 
+                                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                                        }}>
                                             <TableCell><strong>Producto</strong></TableCell>
                                             <TableCell align="right"><strong>Stock Actual</strong></TableCell>
                                             <TableCell align="right"><strong>Umbral</strong></TableCell>

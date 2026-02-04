@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
-import { User, LoginCredentials, AuthResponse } from '../types';
+import { User, LoginCredentials } from '../types';
 import { AUTH_CONFIG } from '../config/appConfig';
 
 interface AuthContextType {
@@ -40,9 +40,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Llamada al endpoint para verificar el token
         const response = await api.get('/auth/profile');
+        
         // Adaptamos la respuesta del backend
-        setUser(response.data.user);
-        setToken(storedToken);
+        const userData = response.data.user || response.data;
+        
+        if (userData && (userData.userId || userData.id)) {
+          setUser(userData);
+          setToken(storedToken);
+        } else {
+          throw new Error('Datos de usuario inválidos');
+        }
       } catch (err) {
         console.error('Error al verificar token:', err);
         // Si el token no es válido, limpiar el almacenamiento
@@ -62,11 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      console.log('Enviando credenciales:', { ...credentials, password: '***' });
-      console.log('URL de la API:', api.defaults.baseURL);
-      
       const response = await api.post('/auth/login', credentials);
-      console.log('Respuesta del servidor:', response.data);
       
       // Adaptamos la respuesta del backend que usa access_token en lugar de token
       const { user, access_token } = response.data;
@@ -75,14 +78,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(user);
       setToken(access_token);
     } catch (err: any) {
-      console.error('Error de login detallado:', err);
+      console.error('Error de login:', err.response?.data?.message || err.message);
       
       if (err.response) {
-        console.error('Respuesta de error:', {
-          status: err.response.status,
-          data: err.response.data,
-          headers: err.response.headers
-        });
         setError(`Error ${err.response.status}: ${err.response.data?.message || 'Credenciales inválidas'}`);
       } else {
         setError('Error de conexión con el servidor');

@@ -14,11 +14,17 @@ import {
   TablePagination,
   Chip,
   IconButton,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import BuildIcon from '@mui/icons-material/Build';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../../components/layout/MainLayout';
 import api from '../../services/api';
@@ -35,6 +41,9 @@ const Sales: React.FC = () => {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [fixStatusDialogOpen, setFixStatusDialogOpen] = useState(false);
+  const [fixingStatuses, setFixingStatuses] = useState(false);
+  const [fixStatusResult, setFixStatusResult] = useState<any>(null);
 
   const fetchSales = useCallback(async () => {
     try {
@@ -53,6 +62,21 @@ const Sales: React.FC = () => {
     await fetchSales();
   };
 
+  const handleFixSaleStatuses = async () => {
+    try {
+      setFixingStatuses(true);
+      const response = await api.post('/sales/fix/statuses');
+      setFixStatusResult(response.data);
+      // Refrescar las ventas después de la corrección
+      await fetchSales();
+    } catch (error) {
+      console.error('Error al corregir estados de ventas:', error);
+      setFixStatusResult({ error: 'Error al corregir estados de ventas' });
+    } finally {
+      setFixingStatuses(false);
+    }
+  };
+
   useEffect(() => {
     fetchSales();
   }, [fetchSales]);
@@ -65,6 +89,7 @@ const Sales: React.FC = () => {
         setSelectedSale(updatedSale);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sales, selectedSale?.id]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -120,15 +145,117 @@ const Sales: React.FC = () => {
         <Typography variant="h5" component="h2">
           Gestión de Ventas
         </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/sales/create')}
-        >
-          Nueva Venta
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Tooltip title="Corregir estados de ventas con deuda completada">
+            <Button 
+              variant="outlined" 
+              color="warning" 
+              startIcon={<BuildIcon />}
+              onClick={() => setFixStatusDialogOpen(true)}
+              disabled={fixingStatuses}
+            >
+              Corregir Estados
+            </Button>
+          </Tooltip>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/sales/create')}
+          >
+            Nueva Venta
+          </Button>
+        </Box>
       </Box>
+
+      {/* Dialog de confirmación para corregir estados */}
+      <Dialog
+        open={fixStatusDialogOpen}
+        onClose={() => setFixStatusDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Corregir Estados de Ventas</DialogTitle>
+        <DialogContent>
+          {!fixStatusResult ? (
+            <Box sx={{ pt: 2 }}>
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                Esta operación verificará todas las ventas PENDING y las marcará como COMPLETED si su deuda está completamente pagada.
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                ¿Deseas continuar?
+              </Typography>
+            </Box>
+          ) : fixStatusResult.error ? (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {fixStatusResult.error}
+            </Alert>
+          ) : (
+            <Box sx={{ pt: 2 }}>
+              <Alert severity="success" sx={{ mb: 2 }}>
+                ✅ Corrección completada exitosamente
+              </Alert>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Ventas verificadas:</strong> {fixStatusResult.totalChecked}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                <strong>Ventas corregidas:</strong> {fixStatusResult.totalFixed}
+              </Typography>
+              {fixStatusResult.fixedSales && fixStatusResult.fixedSales.length > 0 && (
+                <Box sx={{ mt: 2, p: 1, backgroundColor: '#f5f5f5', borderRadius: 1, maxHeight: 200, overflow: 'auto' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>
+                    Detalles de correcciones:
+                  </Typography>
+                  {fixStatusResult.fixedSales.map((sale: any, index: number) => (
+                    <Typography key={index} variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      • Venta {sale.saleId.substring(0, 8)}... → COMPLETED
+                    </Typography>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {!fixStatusResult ? (
+            <>
+              <Button 
+                onClick={() => setFixStatusDialogOpen(false)}
+                variant="outlined"
+                sx={{
+                  color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+                  '&:hover': {
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                  }
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleFixSaleStatuses}
+                variant="contained"
+                color="warning"
+                disabled={fixingStatuses}
+              >
+                {fixingStatuses ? <CircularProgress size={24} /> : 'Corregir'}
+              </Button>
+            </>
+          ) : (
+            <Button 
+              onClick={() => {
+                setFixStatusDialogOpen(false);
+                setFixStatusResult(null);
+              }}
+              variant="contained"
+              color="primary"
+            >
+              Cerrar
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
 
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         {loading ? (
@@ -140,7 +267,12 @@ const Sales: React.FC = () => {
             <TableContainer sx={{ maxHeight: 440 }}>
               <Table stickyHeader aria-label="sticky table">
                 <TableHead>
-                  <TableRow>
+                  <TableRow sx={{ 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[100],
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 10,
+                  }}>
                     <TableCell>Cliente</TableCell>
                     <TableCell>Fecha</TableCell>
                     <TableCell align="right">Total USD</TableCell>

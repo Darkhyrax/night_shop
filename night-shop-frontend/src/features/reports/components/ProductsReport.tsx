@@ -55,9 +55,9 @@ const ProductsReport: React.FC = () => {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchProducts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const formatCurrency = (value: number, isBs: boolean = false) => {
@@ -89,6 +89,12 @@ const ProductsReport: React.FC = () => {
                             onChange={(e) => setStartDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                             fullWidth
+                            sx={{
+                              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                filter: (theme) => theme.palette.mode === 'dark' ? 'invert(0.8)' : 'invert(0)',
+                                cursor: 'pointer',
+                              }
+                            }}
                         />
                         <TextField
                             label="Fecha Fin"
@@ -97,6 +103,12 @@ const ProductsReport: React.FC = () => {
                             onChange={(e) => setEndDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                             fullWidth
+                            sx={{
+                              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                filter: (theme) => theme.palette.mode === 'dark' ? 'invert(0.8)' : 'invert(0)',
+                                cursor: 'pointer',
+                              }
+                            }}
                         />
                         <Button
                             variant="contained"
@@ -125,7 +137,9 @@ const ProductsReport: React.FC = () => {
                         <TableContainer component={Paper}>
                             <Table size="small">
                                 <TableHead>
-                                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                    <TableRow sx={{ 
+                                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                                    }}>
                                         <TableCell><strong>Producto</strong></TableCell>
                                         <TableCell align="right"><strong>Cantidad Vendida</strong></TableCell>
                                         <TableCell align="right"><strong>Ingresos USD</strong></TableCell>

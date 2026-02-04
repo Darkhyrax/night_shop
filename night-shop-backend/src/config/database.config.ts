@@ -13,6 +13,7 @@ const config = {
     database: `${process.env.DB_NAME || 'night_shop_db'}`,
     entities: [process.env.NODE_ENV === 'production' ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
     migrations: [process.env.NODE_ENV === 'production' ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
+    migrationsRun: true,
     autoLoadEntities: true,
     synchronize: process.env.DB_SYNCHRONIZE === 'true' || false,
     cli: {

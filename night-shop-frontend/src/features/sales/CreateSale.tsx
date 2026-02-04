@@ -35,6 +35,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Product, Customer, SaleType, ChangePaymentMethod } from '../../types';
 import ProductSelector from './components/ProductSelector';
 import CustomerSelector from './components/CustomerSelector';
+import CashPaymentSection from './components/CashPaymentSection';
 
 interface SaleItem {
   productId: string;
@@ -49,6 +50,7 @@ interface SaleItem {
 const CreateSale: React.FC = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -59,6 +61,13 @@ const CreateSale: React.FC = () => {
       navigate('/login');
     }
   }, [user, authLoading, navigate]);
+
+  // Scroll al tope cuando hay error o mensaje de éxito
+  useEffect(() => {
+    if (error || successMessage) {
+      containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [error, successMessage]);
 
   // Estado del tipo de venta
   const [saleType, setSaleType] = useState<SaleType>(SaleType.CASH);
@@ -201,6 +210,15 @@ const CreateSale: React.FC = () => {
         return;
       }
 
+      // Validar que el pago cubra el total
+      if (saleType === SaleType.CASH) {
+        const totalPaidInUsd = paidAmountUsd + (paidAmountBs / exchangeRate);
+        if (totalPaidInUsd < totals.totalUsd - 0.01) { // Permitir pequeño margen por redondeo
+          setError(`El pago no cubre el total. Total: $${totals.totalUsd.toFixed(2)}, Pagado: $${totalPaidInUsd.toFixed(2)}`);
+          return;
+        }
+      }
+
       setLoading(true);
       setError(null);
 
@@ -277,8 +295,8 @@ const CreateSale: React.FC = () => {
   };
 
   return (
-    <MainLayout title="Nueva Venta - Checkout">
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+    <MainLayout title="Nueva Venta">
+      <Container maxWidth="lg" sx={{ py: 4 }} ref={containerRef}>
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -311,6 +329,7 @@ const CreateSale: React.FC = () => {
 
         {!authLoading && (
         <Grid container spacing={3}>
+
           {/* Sección Principal - Carrito */}
           <Grid size={{ xs: 12, md: 8 }}>
             {/* Tipo de Venta */}
@@ -389,7 +408,13 @@ const CreateSale: React.FC = () => {
                         </Grid>
                       </Grid>
                       {(creditPaymentUsd > 0 || creditPaymentBs > 0) && (
-                        <Box sx={{ mt: 2, p: 1.5, backgroundColor: '#e8f5e9', borderRadius: 1 }}>
+                        <Box sx={{ 
+                          mt: 2, 
+                          p: 1.5, 
+                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9', 
+                          borderRadius: 1,
+                          border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+                        }}>
                           <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                             ✓ Abono registrado
                           </Typography>
@@ -439,7 +464,9 @@ const CreateSale: React.FC = () => {
                   <TableContainer>
                     <Table>
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                        <TableRow sx={{ 
+                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.3)' : '#f5f5f5'
+                        }}>
                           <TableCell>Producto</TableCell>
                           <TableCell align="right">Cantidad</TableCell>
                           <TableCell align="right">Precio USD</TableCell>
@@ -493,152 +520,28 @@ const CreateSale: React.FC = () => {
 
             {/* Pagos */}
             {saleType === SaleType.CASH && saleItems.length > 0 && (
-              <Card sx={{ mb: 3 }}>
-                <CardHeader title="Forma de Pago" />
-                <CardContent>
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Pagado en USD ($)"
-                        type="number"
-                        value={paidAmountUsd}
-                        onChange={(e) => setPaidAmountUsd(parseFloat(e.target.value) || 0)}
-                        inputProps={{ step: '0.01', min: '0' }}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        label="Pagado en Bs (Bs)"
-                        type="number"
-                        value={paidAmountBs}
-                        onChange={(e) => setPaidAmountBs(parseFloat(e.target.value) || 0)}
-                        inputProps={{ step: '0.01', min: '0' }}
-                      />
-                    </Grid>
-                  </Grid>
-
-                  {/* Mostrar cambio si aplica */}
-                  {hasChange && (
-                    <Box sx={{ mt: 3, p: 2, backgroundColor: '#f0f7ff', borderRadius: 1 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>
-                        💰 Cambio a Retornar:
-                      </Typography>
-                      <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid size={{ xs: 6 }}>
-                          <Typography variant="body2" color="textSecondary">
-                            USD:
-                          </Typography>
-                          <Typography variant="h6" sx={{ color: 'success.main' }}>
-                            {formatCurrency(change.changeUsdEquivalent, false)}
-                          </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 6 }}>
-                          <Typography variant="body2" color="textSecondary">
-                            Bs:
-                          </Typography>
-                          <Typography variant="h6" sx={{ color: 'success.main' }}>
-                            {formatCurrency(change.changeBsEquivalent, true)}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                        ¿Cómo retornar el cambio?
-                      </Typography>
-                      <RadioGroup
-                        row
-                        value={changePaymentMethod}
-                        onChange={(e) => {
-                          setChangePaymentMethod(e.target.value as ChangePaymentMethod);
-                          // Resetear valores cuando cambia el método
-                          if (e.target.value !== ChangePaymentMethod.MIXED) {
-                            setChangeReturnUsd(0);
-                            setChangeReturnBs(0);
-                          }
-                        }}
-                      >
-                        <FormControlLabel
-                          value={ChangePaymentMethod.USD}
-                          control={<Radio size="small" />}
-                          label="Todo en USD"
-                        />
-                        <FormControlLabel
-                          value={ChangePaymentMethod.BS}
-                          control={<Radio size="small" />}
-                          label="Todo en Bs"
-                        />
-                        <FormControlLabel
-                          value={ChangePaymentMethod.MIXED}
-                          control={<Radio size="small" />}
-                          label="Mixto"
-                        />
-                      </RadioGroup>
-
-                      {/* Campos para desglose de cambio mixto */}
-                      {changePaymentMethod === ChangePaymentMethod.MIXED && (
-                        <Box sx={{ mt: 2, p: 2, backgroundColor: '#fff9e6', borderRadius: 1 }}>
-                          <Typography variant="body2" sx={{ mb: 2, fontWeight: 'bold' }}>
-                            Especificar desglose del cambio:
-                          </Typography>
-                          <Grid container spacing={2}>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                              <TextField
-                                fullWidth
-                                label="Cambio en USD"
-                                type="number"
-                                value={changeReturnUsd}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  const limitedVal = Math.min(val, change.changeUsdEquivalent);
-                                  setChangeReturnUsd(limitedVal);
-                                  
-                                  // Calcular automáticamente el restante en Bs
-                                  const remainingUsd = change.changeUsdEquivalent - limitedVal;
-                                  const remainingBs = remainingUsd * exchangeRate;
-                                  setChangeReturnBs(Math.round(remainingBs * 100) / 100);
-                                }}
-                                inputProps={{ step: '0.01', min: '0', max: change.changeUsdEquivalent }}
-                                size="small"
-                              />
-                              <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, display: 'block' }}>
-                                Máximo: {formatCurrency(change.changeUsdEquivalent, false)}
-                              </Typography>
-                            </Grid>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                              <TextField
-                                fullWidth
-                                label="Cambio en Bs"
-                                type="number"
-                                value={changeReturnBs}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  const limitedVal = Math.min(val, change.changeBsEquivalent);
-                                  setChangeReturnBs(limitedVal);
-                                  
-                                  // Calcular automáticamente el restante en USD
-                                  const remainingBs = change.changeBsEquivalent - limitedVal;
-                                  const remainingUsd = remainingBs / exchangeRate;
-                                  setChangeReturnUsd(Math.round(remainingUsd * 100) / 100);
-                                }}
-                                inputProps={{ step: '0.01', min: '0', max: change.changeBsEquivalent }}
-                                size="small"
-                              />
-                              <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, display: 'block' }}>
-                                Máximo: {formatCurrency(change.changeBsEquivalent, true)}
-                              </Typography>
-                            </Grid>
-                          </Grid>
-                          <Typography variant="caption" color="warning.main" sx={{ mt: 1, display: 'block' }}>
-                            ⚠️ Total a retornar: {formatCurrency(changeReturnUsd, false)} + {formatCurrency(changeReturnBs, true)} ({formatCurrency(Math.round(((changeReturnBs / exchangeRate)) * 100) / 100, false)})
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
+              <CashPaymentSection
+                totalUsd={totals.totalUsd}
+                totalBs={totals.totalBs}
+                exchangeRate={exchangeRate}
+                paidAmountUsd={paidAmountUsd}
+                paidAmountBs={paidAmountBs}
+                changePaymentMethod={changePaymentMethod}
+                changeReturnUsd={changeReturnUsd}
+                changeReturnBs={changeReturnBs}
+                onPaymentMethodChange={(method) => {
+                  if (method === 'usd') {
+                    setPaidAmountBs(0);
+                  } else if (method === 'bs') {
+                    setPaidAmountUsd(0);
+                  }
+                }}
+                onPaidAmountUsdChange={setPaidAmountUsd}
+                onPaidAmountBsChange={setPaidAmountBs}
+                onChangePaymentMethodChange={setChangePaymentMethod}
+                onChangeReturnUsdChange={setChangeReturnUsd}
+                onChangeReturnBsChange={setChangeReturnBs}
+              />
             )}
 
             {/* Notas */}
@@ -667,7 +570,13 @@ const CreateSale: React.FC = () => {
               />
               <CardContent>
                 {/* Tasa del día */}
-                <Box sx={{ mb: 2, p: 1.5, backgroundColor: '#e3f2fd', borderRadius: 1 }}>
+                <Box sx={{ 
+                  mb: 2, 
+                  p: 1.5, 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd', 
+                  borderRadius: 1,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+                }}>
                   <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'info.main' }}>
                     📊 TASA DEL DÍA
                   </Typography>
@@ -727,8 +636,14 @@ const CreateSale: React.FC = () => {
                     <Divider sx={{ my: 2 }} />
 
                     {/* Cambio */}
-                    {hasChange && (
-                      <Box sx={{ mb: 3, p: 1.5, backgroundColor: '#e8f5e9', borderRadius: 1 }}>
+                    {hasChange && change.changeUsdEquivalent > 0.01 && (
+                      <Box sx={{ 
+                        mb: 3, 
+                        p: 1.5, 
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9', 
+                        borderRadius: 1,
+                        border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+                      }}>
                         <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                           CAMBIO A RETORNAR
                         </Typography>
@@ -785,7 +700,13 @@ const CreateSale: React.FC = () => {
 
                 {/* Deuda (para crédito) */}
                 {saleType === SaleType.CREDIT && (
-                  <Box sx={{ mb: 3, p: 1.5, backgroundColor: '#fff3e0', borderRadius: 1 }}>
+                  <Box sx={{ 
+                    mb: 3, 
+                    p: 1.5, 
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0', 
+                    borderRadius: 1,
+                    border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`
+                  }}>
                     <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
                       VENTA A CRÉDITO
                     </Typography>
@@ -859,6 +780,7 @@ const CreateSale: React.FC = () => {
         onAddProduct={handleAddProduct}
         products={products}
         loading={productsLoading}
+        exchangeRate={exchangeRate}
       />
     </MainLayout>
   );

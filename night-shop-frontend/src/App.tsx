@@ -1,45 +1,29 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeContextProvider } from './context/ThemeContext';
+import { CompanyProvider } from './context/CompanyContext';
 import AppRoutes from './routes/AppRoutes';
+import LoadingScreen from './components/LoadingScreen';
+import DocumentTitleUpdater from './components/DocumentTitleUpdater';
 import './App.css';
-
-// Crear tema personalizado
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h5: {
-      fontWeight: 500,
-    },
-    h6: {
-      fontWeight: 500,
-    },
-  },
-});
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeContextProvider>
       <CssBaseline />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+      <Suspense fallback={<LoadingScreen />}>
+        <AuthProvider>
+          <CompanyProvider>
+            <DocumentTitleUpdater />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </CompanyProvider>
+        </AuthProvider>
+      </Suspense>
+    </ThemeContextProvider>
   );
 }
 

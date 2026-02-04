@@ -1,16 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { InventoryBatch } from './entities/inventory-batch.entity';
 import { CreateInventoryBatchDto } from './dto/create-inventory-batch.dto';
 import { ProductsService } from '../products/products.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
+import { SaleDetail } from '../sales/entities/sale-detail.entity';
 
 @Injectable()
 export class InventoryService {
     constructor(
         @InjectRepository(InventoryBatch)
         private inventoryBatchRepository: Repository<InventoryBatch>,
+        @InjectRepository(SaleDetail)
+        private saleDetailsRepository: Repository<SaleDetail>,
         private productsService: ProductsService,
         private exchangeRatesService: ExchangeRatesService,
     ) {}
@@ -206,36 +209,30 @@ export class InventoryService {
         productId: string,
         profitPercentage: number,
     ): Promise<void> {
-        // Obtener todos los lotes disponibles del producto
+        // Obtener todos los lotes disponibles del producto, ordenados por fecha de creación descendente
         const batches = await this.inventoryBatchRepository.find({
             where: {
                 productId,
                 currentQuantity: MoreThan(0), // Solo lotes con stock disponible
             },
+            order: { createdAt: 'DESC' }, // Más reciente primero
         });
 
         if (batches.length === 0) {
             return; // No hay lotes disponibles, mantener el precio actual
         }
 
-        // Calcular el precio promedio ponderado
-        let totalCost = 0;
-        let totalQuantity = 0;
+        // Usar el costo unitario del lote más reciente como referencia
+        const latestBatch = batches[0];
+        const referenceCost = latestBatch.unitCostUsd;
 
-        for (const batch of batches) {
-            totalCost += batch.unitCostUsd * batch.currentQuantity;
-            totalQuantity += batch.currentQuantity;
-        }
+        // Calcular el nuevo precio de venta basado en el costo del lote más reciente y el porcentaje proporcionado
+        const newSellingPrice = referenceCost * (1 + profitPercentage / 100);
 
-        const averageCost = totalCost / totalQuantity;
-
-        // Calcular el nuevo precio de venta basado en el costo promedio y el porcentaje proporcionado
-        const newSellingPrice = averageCost * (1 + profitPercentage / 100);
-
-        // Actualizar el producto con el nuevo costo, porcentaje de ganancia y precio
+        // Actualizar el producto con el costo del lote más reciente, porcentaje de ganancia y precio
         await this.productsService.updatePricing(
             productId,
-            averageCost,
+            referenceCost,
             profitPercentage,
             newSellingPrice,
         );
@@ -254,5 +251,73 @@ export class InventoryService {
             profitPercentage,
             sellingPrice,
         );
+    }
+
+    async updateBatch(
+        id: string,
+        updateData: {
+            batchCode?: string;
+            profitPercentage?: number;
+            expirationDate?: Date;
+        },
+    ): Promise<InventoryBatch> {
+        const batch = await this.findBatch(id);
+
+        // Verificar si hay productos de este lote que han sido vendidos
+        const saleDetailsCount = await this.saleDetailsRepository.count({
+            where: { inventoryBatchId: id },
+        });
+
+        if (saleDetailsCount > 0) {
+            throw new BadRequestException(
+                'No se puede editar este lote porque tiene productos vendidos. Solo se pueden editar lotes sin ventas asociadas.',
+            );
+        }
+
+        // Actualizar los campos permitidos
+        if (updateData.batchCode !== undefined) {
+            batch.batchCode = updateData.batchCode;
+        }
+        if (updateData.expirationDate !== undefined) {
+            batch.expirationDate = updateData.expirationDate;
+        }
+
+        // Si se actualiza el porcentaje de ganancia, recalcular el precio de venta
+        if (updateData.profitPercentage !== undefined) {
+            batch.profitPercentage = updateData.profitPercentage;
+            batch.sellingPriceUsd = batch.unitCostUsd * (1 + updateData.profitPercentage / 100);
+
+            // Actualizar el precio del producto
+            await this.updateProductAveragePriceWithProfit(
+                batch.productId,
+                updateData.profitPercentage,
+            );
+        }
+
+        return this.inventoryBatchRepository.save(batch);
+    }
+
+    async deleteBatch(id: string): Promise<void> {
+        const batch = await this.findBatch(id);
+
+        // Verificar si hay productos de este lote que han sido vendidos
+        const saleDetailsCount = await this.saleDetailsRepository.count({
+            where: { inventoryBatchId: id },
+        });
+
+        if (saleDetailsCount > 0) {
+            throw new BadRequestException(
+                'No se puede eliminar este lote porque tiene productos vendidos. Solo se pueden eliminar lotes sin ventas asociadas.',
+            );
+        }
+
+        // Si no hay ventas, proceder a eliminar el lote
+        await this.inventoryBatchRepository.remove(batch);
+
+        // Actualizar el stock total del producto
+        await this.updateProductStock(batch.productId);
+
+        // Recalcular el precio promedio ponderado del producto
+        await this.updateProductAveragePrice(batch.productId);
     }
 }

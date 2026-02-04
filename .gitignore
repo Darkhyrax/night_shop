@@ -51,7 +51,5 @@ start.bat
 start.sh
 TEST.md
 
-# Keep only user-facing documentation
-# README.md - User guide (keep)
-# DEPLOYMENT.md - Deployment guide (keep)
-# docker-compose.prod.yml - Production config (keep)
+
+build-and-push.ps1

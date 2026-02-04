@@ -31,10 +31,12 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
 import MainLayout from '../../components/layout/MainLayout';
 import api from '../../services/api';
 import { InventoryBatch, Product } from '../../types';
 import InventoryBatchFormDialog from './InventoryBatchFormDialog';
+import InventoryBatchEditDialog from './InventoryBatchEditDialog';
 import { useSnackbar } from 'notistack';
 
 const Inventory: React.FC = () => {
@@ -42,6 +44,7 @@ const Inventory: React.FC = () => {
   const [filteredBatches, setFilteredBatches] = useState<InventoryBatch[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [deleting, setDeleting] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +52,10 @@ const Inventory: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<InventoryBatch | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number>(1);
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -146,19 +152,58 @@ const Inventory: React.FC = () => {
     if (!selectedBatch) return;
 
     try {
-      await api.delete(`/inventory/${selectedBatch.id}`);
+      setDeleting(true);
+      setDeleteError(null);
+      await api.delete(`/inventory/batches/${selectedBatch.id}`);
       enqueueSnackbar('Lote eliminado exitosamente', { variant: 'success' });
       fetchInventory();
       setDeleteDialogOpen(false);
     } catch (error: any) {
-      enqueueSnackbar(error.message || 'Error al eliminar lote', { variant: 'error' });
+      // Intentar obtener el mensaje de error del servidor
+      let errorMessage = 'Error al eliminar lote';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setDeleteError(errorMessage);
+    } finally {
+      setDeleting(false);
     }
   };
 
   // Manejar visualización de detalles
-  const handleViewDetails = (batch: InventoryBatch) => {
+  const handleViewDetails = async (batch: InventoryBatch) => {
     setSelectedBatch(batch);
     setDetailsDialogOpen(true);
+    
+    // Cargar la tasa de cambio actual
+    try {
+      const response = await api.get('/exchange-rates/current');
+      setExchangeRate(Number(response.data.rate));
+    } catch (error) {
+      console.error('Error al cargar tasa de cambio:', error);
+      setExchangeRate(1); // Valor por defecto
+    }
+  };
+
+  // Manejar edición de lote
+  const handleEditClick = async (batch: InventoryBatch) => {
+    // Verificar si el lote tiene ventas asociadas
+    try {
+      await api.get(`/inventory/batches/${batch.id}`);
+      // Si llegamos aquí, el lote existe
+      // Abrimos el diálogo de edición con los datos del lote
+      setSelectedBatch(batch);
+      setEditDialogOpen(true);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Error al cargar el lote';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+    }
   };
 
   // Obtener nombre del producto
@@ -264,12 +309,21 @@ const Inventory: React.FC = () => {
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
+                          <Tooltip title="Editar">
+                            <IconButton
+                              size="small"
+                              color="info"
+                              onClick={() => handleEditClick(batch)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Eliminar">
                             <IconButton
                               size="small"
                               color="error"
                               onClick={() => handleDeleteClick(batch)}
-                              disabled={loading}
+                              disabled={deleting}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -311,20 +365,48 @@ const Inventory: React.FC = () => {
       {/* Diálogo de confirmación para eliminar */}
       <Dialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setDeleteError(null);
+        }}
       >
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
+          {deleteError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
           <DialogContentText>
             ¿Está seguro que desea eliminar este lote? Esta acción no se puede deshacer.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+          <Button 
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setDeleteError(null);
+            }} 
+            disabled={deleting}
+            variant="outlined"
+            sx={{
+              color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+              '&:hover': {
+                borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+              }
+            }}
+          >
             Cancelar
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
-            Eliminar
+          <Button 
+            onClick={handleConfirmDelete} 
+            color="error" 
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? 'Eliminando...' : 'Eliminar'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -344,7 +426,11 @@ const Inventory: React.FC = () => {
             <Grid container spacing={3}>
               {/* Información General */}
               <Grid size={{ xs: 12 }}>
-                <Card sx={{ backgroundColor: '#f5f5f5', borderLeft: '4px solid #1976d2' }}>
+                <Card sx={{ 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.15)' : '#f5f5f5', 
+                  borderLeft: (theme) => `4px solid ${theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.6)' : '#1976d2'}`,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.3)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                       📋 Información General
@@ -378,8 +464,13 @@ const Inventory: React.FC = () => {
               {/* Moneda de Pago y Tasa de Cambio */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Card sx={{ 
-                  backgroundColor: selectedBatch.costCurrency === 'usd' ? '#e3f2fd' : '#fff3e0', 
-                  borderLeft: selectedBatch.costCurrency === 'usd' ? '4px solid #1976d2' : '4px solid #f57c00'
+                  backgroundColor: (theme) => selectedBatch.costCurrency === 'usd' 
+                    ? (theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd')
+                    : (theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : '#fff3e0'),
+                  borderLeft: (theme) => selectedBatch.costCurrency === 'usd' 
+                    ? `4px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.6)' : '#1976d2'}`
+                    : `4px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.6)' : '#f57c00'}`,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
                 }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -405,9 +496,13 @@ const Inventory: React.FC = () => {
 
               {/* Cantidades */}
               <Grid size={{ xs: 12, md: 6 }}>
-                <Card sx={{ backgroundColor: '#f3e5f5', borderLeft: '4px solid #7b1fa2' }}>
+                <Card sx={{ 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.15)' : '#f3e5f5',
+                  borderLeft: (theme) => `4px solid ${theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.6)' : '#7b1fa2'}`,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#7b1fa2' }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: (theme) => theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.8)' : '#7b1fa2' }}>
                       📦 Cantidades
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
@@ -432,9 +527,13 @@ const Inventory: React.FC = () => {
 
               {/* Costos */}
               <Grid size={{ xs: 12, md: 6 }}>
-                <Card sx={{ backgroundColor: '#fce4ec', borderLeft: '4px solid #c2185b' }}>
+                <Card sx={{ 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(194, 24, 91, 0.15)' : '#fce4ec',
+                  borderLeft: (theme) => `4px solid ${theme.palette.mode === 'dark' ? 'rgba(194, 24, 91, 0.6)' : '#c2185b'}`,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(194, 24, 91, 0.3)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#c2185b' }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: (theme) => theme.palette.mode === 'dark' ? 'rgba(194, 24, 91, 0.8)' : '#c2185b' }}>
                       💰 Costo Total
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
@@ -453,9 +552,13 @@ const Inventory: React.FC = () => {
 
               {/* Costo Unitario */}
               <Grid size={{ xs: 12, md: 6 }}>
-                <Card sx={{ backgroundColor: '#e8f5e9', borderLeft: '4px solid #388e3c' }}>
+                <Card sx={{ 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 142, 60, 0.15)' : '#e8f5e9',
+                  borderLeft: (theme) => `4px solid ${theme.palette.mode === 'dark' ? 'rgba(56, 142, 60, 0.6)' : '#388e3c'}`,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(56, 142, 60, 0.3)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#388e3c' }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 142, 60, 0.8)' : '#388e3c' }}>
                       🏷️ Costo Unitario
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
@@ -474,9 +577,13 @@ const Inventory: React.FC = () => {
 
               {/* Precio de Venta */}
               <Grid size={{ xs: 12 }}>
-                <Card sx={{ backgroundColor: '#c8e6c9', borderLeft: '4px solid #2e7d32' }}>
+                <Card sx={{ 
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.15)' : '#c8e6c9',
+                  borderLeft: (theme) => `4px solid ${theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.6)' : '#2e7d32'}`,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.3)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: (theme) => theme.palette.mode === 'dark' ? 'rgba(46, 125, 50, 0.8)' : '#2e7d32' }}>
                       ✅ Precio de Venta (con {selectedBatch.profitPercentage}% de ganancia)
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
@@ -484,6 +591,12 @@ const Inventory: React.FC = () => {
                         <Typography variant="caption" color="textSecondary">Precio en USD</Typography>
                         <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
                           {formatCurrency(selectedBatch.sellingPriceUsd, false)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary">Precio en Bs</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                          {formatCurrency(selectedBatch.sellingPriceUsd * (exchangeRate || 1), true)}
                         </Typography>
                       </Box>
                     </Box>
@@ -499,6 +612,14 @@ const Inventory: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Diálogo de edición de lote */}
+      <InventoryBatchEditDialog
+        open={editDialogOpen}
+        batch={selectedBatch}
+        onClose={() => setEditDialogOpen(false)}
+        onSave={fetchInventory}
+      />
     </MainLayout>
   );
 };

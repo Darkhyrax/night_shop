@@ -6,24 +6,18 @@ Un CMS profesional y escalable diseñado para tiendas locales, con soporte para 
 
 ---
 
-## 🚀 Inicio Rápido (Docker)
+## ⚡ Inicio Rápido (3 pasos)
 
-### Requisitos
+### 1️⃣ Requisitos
 - **Docker Desktop**: [Descargar](https://www.docker.com/products/docker-desktop)
 - **Mínimo 4GB RAM** disponible
 
-### Pasos
+### 2️⃣ Crear `docker-compose.yml`
 
-#### 1. Descargar la imagen
-```bash
-docker pull ghcr.io/darkhyrax/night_shop-backend:latest
-docker pull ghcr.io/darkhyrax/night_shop-frontend:latest
-```
+Copia este contenido en un archivo `docker-compose.yml`:
 
-#### 2. Crear archivo `docker-compose.yml`
 ```yaml
 version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -49,7 +43,7 @@ services:
       DB_USER: nightshop
       DB_PASSWORD: nightshop123
       DB_NAME: night_shop_db
-      JWT_SECRET: your-secret-key-change-in-production
+      JWT_SECRET: tu-clave-segura-aqui-32-caracteres-minimo
       JWT_EXPIRATION: 24h
       CORS_ORIGIN: http://localhost:3001
       PORT: 3000
@@ -73,77 +67,31 @@ volumes:
   postgres_data:
 ```
 
-> **⚠️ IMPORTANTE:** Antes del paso 3, reemplaza `your-secret-key-change-in-production` con una clave segura. Ver **Paso 3** en [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones.
+> **⚠️ IMPORTANTE:** Reemplaza `tu-clave-segura-aqui-32-caracteres-minimo` con una clave aleatoria. Ver [DEPLOYMENT.md](./DEPLOYMENT.md) para generar una clave segura.
 
-#### 3. Iniciar los servicios
+### 3️⃣ Iniciar
+
 ```bash
 docker-compose up -d
 ```
 
-#### 4. Acceder a la aplicación
+Accede a:
 - **Frontend**: http://localhost:3001
-- **Backend API**: http://localhost:3000
-- **Swagger Docs**: http://localhost:3000/api/docs
-
-#### 5. Detener la aplicación
-```bash
-docker-compose down
-```
+- **API Docs**: http://localhost:3000/api/docs
 
 ---
 
-## 📋 Características Principales
+## � Documentación
 
-### Gestión de Ventas
-- ✅ Ventas de Contado y Crédito
-- ✅ Múltiples Monedas (USD y Bolívares)
-- ✅ Cálculo automático de cambio
-- ✅ Historial de pagos y abonos
+### Para Usuarios Finales
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Guía completa de despliegue, configuración y troubleshooting
 
-### Gestión de Inventario
-- ✅ Control de stock en tiempo real
-- ✅ Lotes de compra con costos
-- ✅ Alertas de stock bajo
-- ✅ Múltiples monedas de compra
-
-### Gestión de Clientes
-- ✅ Perfiles detallados
-- ✅ Seguimiento de deudas
-- ✅ Historial de compras
-- ✅ Abonos flexibles
-
-### Tasas de Cambio
-- ✅ Sincronización automática (diaria a las 4 PM)
-- ✅ Sincronización manual
-- ✅ Historial de cambios
-- ✅ Alertas visuales
-
-### Reportes
-- ✅ Resumen de ventas
-- ✅ Productos más vendidos
-- ✅ Clientes más activos
-- ✅ Clientes con mayor deuda
-- ✅ Inventario bajo
-- ✅ Filtros por fecha
-
-### Dashboard
-- ✅ KPIs en tiempo real
-- ✅ Gráficos visuales
-- ✅ Desglose por moneda
-- ✅ Alertas del sistema
-
----
-
-## 📖 Documentación
-
-Para configuración avanzada, cambiar puertos, generar claves seguras y troubleshooting, consulta **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
-
-### API Swagger
-
-La documentación interactiva de la API está disponible en:
-```
-http://localhost:3000/api/docs
-```
+### Para Desarrolladores
+- **[docs/README.md](./docs/README.md)** - Índice de documentación técnica
+- **[docs/FEATURES.md](./docs/FEATURES.md)** - Características implementadas
+- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Arquitectura y modelo de datos
+- **[docs/SECURITY.md](./docs/SECURITY.md)** - Seguridad y mejores prácticas
+- **[docs/DOCKER_GUIDE.md](./docs/DOCKER_GUIDE.md)** - Desarrollo local con Docker
 
 ---
 

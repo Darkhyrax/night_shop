@@ -20,6 +20,7 @@ interface ProductSelectorProps {
   onAddProduct: (productId: string, quantity: number) => void;
   products: Product[];
   loading: boolean;
+  exchangeRate: number;
 }
 
 const ProductSelector: React.FC<ProductSelectorProps> = ({
@@ -28,6 +29,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   onAddProduct,
   products,
   loading,
+  exchangeRate,
 }) => {
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -128,7 +130,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 6 }}>
                     <Typography variant="body2" color="textSecondary">
-                      Precio Unitario
+                      Precio Unitario (USD)
                     </Typography>
                     <Typography variant="body1">
                       ${Number(selectedProduct.currentSellingPrice).toFixed(2)}
@@ -136,10 +138,26 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                   </Grid>
                   <Grid size={{ xs: 6 }}>
                     <Typography variant="body2" color="textSecondary">
-                      Subtotal
+                      Precio Unitario (Bs)
+                    </Typography>
+                    <Typography variant="body1">
+                      Bs. {(Number(selectedProduct.currentSellingPrice) * exchangeRate).toFixed(2)}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="textSecondary">
+                      Subtotal (USD)
                     </Typography>
                     <Typography variant="body1">
                       ${(Number(selectedProduct.currentSellingPrice) * quantity).toFixed(2)}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="body2" color="textSecondary">
+                      Subtotal (Bs)
+                    </Typography>
+                    <Typography variant="body1">
+                      Bs. {(Number(selectedProduct.currentSellingPrice) * exchangeRate * quantity).toFixed(2)}
                     </Typography>
                   </Grid>
                 </Grid>
@@ -149,7 +167,20 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancelar</Button>
+        <Button 
+          onClick={handleClose}
+          variant="outlined"
+          sx={{
+            color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+            '&:hover': {
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+            }
+          }}
+        >
+          Cancelar
+        </Button>
         <Button
           onClick={handleAdd}
           variant="contained"

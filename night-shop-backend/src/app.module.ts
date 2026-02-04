@@ -13,6 +13,7 @@ import { CustomersModule } from './customers/customers.module';
 import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 import { SeedersModule } from './seeders/seeders.module';
 import { ReportsModule } from './reports/reports.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
     imports: [
@@ -39,6 +40,7 @@ import { ReportsModule } from './reports/reports.module';
         ExchangeRatesModule,
         SeedersModule,
         ReportsModule,
+        CompanyModule,
     ],
     controllers: [AppController],
     providers: [AppService],

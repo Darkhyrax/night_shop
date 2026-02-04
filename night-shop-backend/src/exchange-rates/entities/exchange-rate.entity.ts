@@ -26,6 +26,12 @@ export class ExchangeRate {
     @Column({ nullable: true })
     notes: string; // Notas adicionales
 
+    @Column({ default: 'BCV', name: 'rate_type' })
+    rateType: 'BCV' | 'CUSTOM'; // Tipo de tasa: BCV (automática) o CUSTOM (manual)
+
+    @Column({ default: false, name: 'is_manually_set' })
+    isManuallySet: boolean; // Indica si fue establecida manualmente por usuario
+
     @CreateDateColumn()
     createdAt: Date;
 

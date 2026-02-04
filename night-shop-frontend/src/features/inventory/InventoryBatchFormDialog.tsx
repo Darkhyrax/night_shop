@@ -138,7 +138,19 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
             setFormError(null);
             setActiveStep(0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
+
+    // Cuando se selecciona un producto, preestablecer su porcentaje de ganancia
+    useEffect(() => {
+        if (formik.values.productId && products.length > 0) {
+            const selectedProduct = products.find(p => p.id === formik.values.productId);
+            if (selectedProduct && selectedProduct.currentProfitPercentage) {
+                formik.setFieldValue('profitPercentage', selectedProduct.currentProfitPercentage);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formik.values.productId, products]);
 
     // Cálculos automáticos
     const calculateUnitCost = () => {
@@ -295,12 +307,21 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                     label="Fecha de Compra"
                                     value={formik.values.purchaseDate}
                                     onChange={(date) => formik.setFieldValue('purchaseDate', date)}
+                                    format="dd-MM-yyyy"
                                     slotProps={{
                                         textField: {
                                             fullWidth: true,
                                             error: formik.touched.purchaseDate && Boolean(formik.errors.purchaseDate),
                                             helperText: formik.touched.purchaseDate && formik.errors.purchaseDate as string,
                                         },
+                                        openPickerButton: {
+                                            sx: {
+                                                color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.54)',
+                                                '&:hover': {
+                                                    color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'rgba(0, 0, 0, 0.87)',
+                                                }
+                                            }
+                                        }
                                     }}
                                 />
                             </LocalizationProvider>
@@ -311,10 +332,19 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                                     label="Fecha de Vencimiento (opcional)"
                                     value={formik.values.expirationDate}
                                     onChange={(date) => formik.setFieldValue('expirationDate', date)}
+                                    format="dd-MM-yyyy"
                                     slotProps={{
                                         textField: {
                                             fullWidth: true,
                                         },
+                                        openPickerButton: {
+                                            sx: {
+                                                color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.54)',
+                                                '&:hover': {
+                                                    color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'rgba(0, 0, 0, 0.87)',
+                                                }
+                                            }
+                                        }
                                     }}
                                 />
                             </LocalizationProvider>
@@ -340,7 +370,11 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                             <Divider />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <Paper elevation={2} sx={{ p: 2 }}>
+                            <Paper elevation={2} sx={{ 
+                              p: 2,
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd',
+                              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)'}`
+                            }}>
                                 <Typography variant="subtitle2" color="text.secondary">
                                     Costo Total
                                 </Typography>
@@ -359,7 +393,11 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                             </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <Paper elevation={2} sx={{ p: 2 }}>
+                            <Paper elevation={2} sx={{ 
+                              p: 2,
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.15)' : '#f3e5f5',
+                              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(156, 39, 176, 0.2)'}`
+                            }}>
                                 <Typography variant="subtitle2" color="text.secondary">
                                     Costo Unitario
                                 </Typography>
@@ -379,7 +417,11 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                             <Divider />
                         </Grid>
                         <Grid size={{ xs: 12 }}>
-                            <Paper elevation={3} sx={{ p: 2, bgcolor: 'success.light' }}>
+                            <Paper elevation={3} sx={{ 
+                              p: 2, 
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9',
+                              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+                            }}>
                                 <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                                     Precio de Venta en USD (con {formik.values.profitPercentage}% de ganancia)
                                 </Typography>
@@ -424,11 +466,35 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                 </form>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose} disabled={loading}>
+                <Button 
+                  onClick={onClose} 
+                  disabled={loading}
+                  variant="outlined"
+                  sx={{
+                    color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+                    '&:hover': {
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                    }
+                  }}
+                >
                     Cancelar
                 </Button>
                 {activeStep > 0 && (
-                    <Button onClick={handleBack} disabled={loading}>
+                    <Button 
+                      onClick={handleBack} 
+                      disabled={loading}
+                      variant="outlined"
+                      sx={{
+                        color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)',
+                        '&:hover': {
+                          borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)',
+                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                        }
+                      }}
+                    >
                         Atrás
                     </Button>
                 )}
@@ -447,7 +513,7 @@ const InventoryBatchFormDialog: React.FC<InventoryBatchFormDialogProps> = ({
                 ) : (
                     <Button
                         variant="contained"
-                        color="primary"
+                        color="success"
                         onClick={() => formik.handleSubmit()}
                         disabled={!formik.isValid || loading}
                     >

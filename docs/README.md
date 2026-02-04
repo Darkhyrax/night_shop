@@ -1,285 +1,127 @@
-# 📚 Documentación de Desarrollo - Night Shop CMS
+# 📚 Documentación Técnica - Night Shop CMS
 
-Esta carpeta contiene documentación para **desarrolladores** que trabajan en el proyecto.
+Documentación para **desarrolladores** que trabajan en el proyecto.
 
-**Para usuarios finales**, consulta los archivos en la raíz del proyecto:
-- `README.md` - Guía de inicio rápido con Docker
-- `DEPLOYMENT.md` - Instrucciones detalladas de despliegue
-- `docker-compose.prod.yml` - Configuración de producción
+> **👥 Para usuarios finales:** Ver [`README.md`](../README.md) y [`DEPLOYMENT.md`](../DEPLOYMENT.md) en la raíz del proyecto.
 
 ---
 
-## 📖 Índice de Documentación
+## 🗺️ Mapa de Documentación
 
-### 1. **ARCHITECTURE.md**
-Documentación completa de la arquitectura del proyecto.
-
-**Contenido:**
-- Estructura del proyecto
-- Modelo de datos (entidades)
-- Flujos principales
-- Patrones de diseño
-- Roadmap v2.0 (Multi-tienda)
-- Configuración
-
-**Para quién:** Arquitectos, desarrolladores senior, nuevos miembros del equipo
+| Documento | Propósito | Audiencia |
+|-----------|-----------|-----------|
+| **FEATURES.md** | Qué se puede hacer (características) | Product managers, QA, stakeholders |
+| **ARCHITECTURE.md** | Cómo está construido (técnico) | Arquitectos, desarrolladores senior |
+| **SECURITY.md** | Cómo está protegido (seguridad) | Desarrolladores, DevOps, security |
+| **DOCKER_GUIDE.md** | Cómo desarrollar localmente | Desarrolladores, DevOps |
+| **GITHUB_SETUP.md** | Cómo configurar CI/CD | DevOps, maintainers |
 
 ---
 
-### 2. **DOCKER_GUIDE.md**
-Guía completa de Docker para desarrollo local.
+## 📖 Documentos Detallados
 
-**Contenido:**
+### 1. **FEATURES.md** - Características Implementadas
+**¿Qué puedo hacer con Night Shop?**
+
+Lista completa de funcionalidades:
+- Gestión de ventas (contado/crédito)
+- Gestión de clientes y deudas
+- Inventario y productos
+- Tasas de cambio automáticas
+- Reportes y análisis
+- Dashboard con KPIs
+- Seguridad y autenticación
+
+👉 **Leer si:** Quieres saber qué características tiene el sistema
+
+---
+
+### 2. **ARCHITECTURE.md** - Arquitectura Técnica
+**¿Cómo está construido Night Shop?**
+
+Detalles técnicos:
+- Estructura del proyecto (backend/frontend)
+- Modelo de datos (entidades y relaciones)
+- Flujos principales (venta, autenticación, etc.)
+- Patrones de diseño (modular, service layer)
+- Roadmap v2.0 (multi-tienda)
+
+👉 **Leer si:** Necesitas entender la arquitectura o agregar nuevas características
+
+---
+
+### 3. **SECURITY.md** - Seguridad
+**¿Cómo está protegido Night Shop?**
+
+Medidas de seguridad implementadas:
+- Autenticación JWT
+- Rate limiting en login
+- Validación de contraseñas
+- Encriptación de datos
+- Checklist de seguridad para producción
+
+👉 **Leer si:** Necesitas entender o mejorar la seguridad
+
+---
+
+### 4. **DOCKER_GUIDE.md** - Desarrollo Local
+**¿Cómo desarrollo localmente?**
+
+Guía para desarrollo con Docker:
 - Inicio rápido
 - Comandos principales
+- Hot-reload
+- Debugging
 - Troubleshooting
-- Configuración avanzada
-- Mantenimiento
-- Monitoreo
-- Desarrollo con hot-reload
-- Producción
 
-**Para quién:** Desarrolladores, DevOps, QA
+👉 **Leer si:** Estás desarrollando localmente o necesitas configurar el entorno
 
 ---
 
-### 3. **GITHUB_SETUP.md**
-Pasos ordenados para configurar GitHub Actions y GHCR.
+### 5. **GITHUB_SETUP.md** - CI/CD
+**¿Cómo configurar GitHub Actions?**
 
-**Contenido:**
-- Preparación del repositorio
-- Habilitación de GitHub Actions
-- Creación de tokens
-- Configuración de secrets
+Configuración de automatización:
+- GitHub Actions
+- Construcción de imágenes Docker
+- Push a GHCR
 - Monitoreo de builds
-- Verificación de imágenes
 
-**Para quién:** DevOps, maintainers, administradores del repositorio
+👉 **Leer si:** Necesitas configurar o mantener CI/CD
 
 ---
 
-## 🚀 Flujo de Trabajo para Desarrolladores
+## 🎯 Próximos Pasos
 
-### Desarrollo Local
+1. **Primeros pasos:** Lee `DOCKER_GUIDE.md` para configurar tu entorno local
+2. **Entender el código:** Lee `ARCHITECTURE.md` para conocer la estructura
+3. **Agregar features:** Lee `FEATURES.md` para ver qué ya existe
+4. **Mejorar seguridad:** Lee `SECURITY.md` para entender las medidas implementadas
+5. **Desplegar:** Lee `GITHUB_SETUP.md` para configurar CI/CD
 
+---
+
+## 📞 Referencia Rápida
+
+**Estructura del proyecto:**
+- `night-shop-backend/` - API NestJS (autenticación, ventas, clientes, reportes)
+- `night-shop-frontend/` - Frontend React (UI, formularios, dashboard)
+- `docs/` - Documentación técnica
+- `README.md` - Inicio rápido para usuarios finales
+- `DEPLOYMENT.md` - Guía de despliegue
+
+**Comandos principales:**
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/Darkhyrax/night-shop.git
-cd night-shop
-
-# 2. Iniciar servicios con Docker
-docker-compose up -d
-
-# 3. Ver logs
-docker-compose logs -f
-
-# 4. Acceder a la aplicación
-# Frontend: http://localhost:3001
-# Backend: http://localhost:3000
-# Swagger: http://localhost:3000/api/docs
+docker-compose up -d          # Iniciar servicios
+docker-compose logs -f        # Ver logs
+docker-compose down           # Detener servicios
 ```
 
-Ver `DOCKER_GUIDE.md` para más detalles.
-
-### Despliegue a Producción
-
-```bash
-# 1. Hacer push a main (dispara GitHub Actions)
-git push origin main
-
-# 2. GitHub Actions construye y sube imágenes a GHCR
-# (Monitorear en https://github.com/Darkhyrax/night-shop/actions)
-
-# 3. Usuarios descargan imágenes desde GHCR
-docker pull ghcr.io/Darkhyrax/night-shop-backend:latest
-docker pull ghcr.io/Darkhyrax/night-shop-frontend:latest
-
-# 4. Usuarios despliegan con docker-compose.prod.yml
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-Ver `GITHUB_SETUP.md` para configuración inicial.
+**URLs locales:**
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:3000
+- Swagger Docs: http://localhost:3000/api/docs
 
 ---
 
-## 🏗️ Estructura del Proyecto
-
-```
-night-shop/
-├── night-shop-backend/          # API NestJS
-│   ├── src/
-│   │   ├── auth/                # Autenticación
-│   │   ├── users/               # Gestión de usuarios
-│   │   ├── products/            # Catálogo
-│   │   ├── inventory/           # Inventario
-│   │   ├── sales/               # Ventas
-│   │   ├── customers/           # Clientes
-│   │   ├── exchange-rates/      # Tasas de cambio
-│   │   ├── reports/             # Reportes
-│   │   ├── config/              # Configuración
-│   │   ├── migrations/          # Migraciones
-│   │   └── main.ts
-│   ├── Dockerfile
-│   └── package.json
-│
-├── night-shop-frontend/         # Frontend React
-│   ├── src/
-│   │   ├── components/          # Componentes
-│   │   ├── features/            # Módulos
-│   │   ├── services/            # API client
-│   │   ├── types/               # Tipos TypeScript
-│   │   ├── hooks/               # Custom hooks
-│   │   └── App.tsx
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── package.json
-│
-├── docs/                        # Documentación de desarrollo
-│   ├── README.md                # Este archivo
-│   ├── ARCHITECTURE.md
-│   ├── DOCKER_GUIDE.md
-│   └── GITHUB_SETUP.md
-│
-├── README.md                    # Guía para usuarios finales
-├── DEPLOYMENT.md                # Instrucciones de despliegue
-├── docker-compose.yml           # Desarrollo
-├── docker-compose.prod.yml      # Producción
-├── .dockerignore
-├── .gitignore
-├── .env.example
-└── .github/
-    └── workflows/
-        └── docker-build.yml     # GitHub Actions
-```
-
----
-
-## 🔧 Comandos Útiles
-
-### Desarrollo
-
-```bash
-# Iniciar servicios
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Ejecutar migraciones
-docker-compose exec backend npm run migration:run
-
-# Acceder a la BD
-docker-compose exec postgres psql -U nightshop -d night_shop_db
-
-# Detener servicios
-docker-compose down
-```
-
-### Testing
-
-```bash
-# Backend
-docker-compose exec backend npm run test
-
-# Frontend
-docker-compose exec frontend npm run test
-```
-
-### Limpieza
-
-```bash
-# Eliminar todo (incluyendo datos)
-docker-compose down -v
-
-# Limpiar imágenes no utilizadas
-docker image prune -a
-```
-
----
-
-## 📊 Entidades Principales
-
-Ver `ARCHITECTURE.md` para detalles completos.
-
-- **Users** - Usuarios del sistema
-- **Customers** - Clientes de la tienda
-- **Products** - Catálogo de productos
-- **InventoryBatches** - Lotes de compra
-- **Sales** - Registro de ventas
-- **SaleDetails** - Detalles de productos en ventas
-- **CustomerAccounts** - Deudas de clientes
-- **CustomerPayments** - Pagos registrados
-- **ExchangeRates** - Tasas de cambio
-- **ExchangeRateSyncLogs** - Historial de sincronizaciones
-
----
-
-## 🔐 Seguridad
-
-### Desarrollo
-- JWT_SECRET: `your-secret-key-change-in-production`
-- Credenciales BD: usuario/contraseña por defecto
-
-### Producción
-- Cambiar `JWT_SECRET` a clave aleatoria fuerte
-- Cambiar credenciales de BD
-- Usar HTTPS/SSL
-- Configurar firewall
-- Realizar backups regulares
-
-Ver `DEPLOYMENT.md` para más detalles.
-
----
-
-## 🚀 Roadmap v2.0
-
-Próximas características planeadas:
-- [ ] Multi-tienda
-- [ ] Personalización visual
-- [ ] Integración de pagos
-- [ ] Notificaciones (Email/SMS)
-- [ ] Backup automático
-- [ ] Auditoría completa
-- [ ] API pública
-- [ ] Aplicación móvil
-
-Ver `ARCHITECTURE.md` para estrategia de migración.
-
----
-
-## 🤝 Contribución
-
-### Estándares de Código
-- ESLint + Prettier
-- TypeScript strict mode
-- Convenciones de nombres
-- Commits semánticos
-
-### Workflow
-1. Fork del repositorio
-2. Rama feature: `feature/nombre`
-3. Commits descriptivos
-4. Pull request con descripción
-5. Code review
-6. Merge a main
-
----
-
-## 📞 Soporte
-
-Para preguntas sobre desarrollo:
-1. Revisa la documentación en esta carpeta
-2. Consulta el README.md principal
-3. Abre un issue en GitHub
-4. Contacta al equipo
-
----
-
-## 📝 Licencia
-
-Este proyecto está bajo la licencia MIT.
-
----
-
-**Última actualización:** Enero 2025
-**Versión:** 1.0.0
+**Última actualización:** Enero 2026 | **Versión:** 1.0.0

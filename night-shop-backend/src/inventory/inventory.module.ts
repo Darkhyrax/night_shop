@@ -5,10 +5,11 @@ import { InventoryService } from './inventory.service';
 import { InventoryController } from './inventory.controller';
 import { ProductsModule } from '../products/products.module';
 import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
+import { SaleDetail } from '../sales/entities/sale-detail.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([InventoryBatch]),
+        TypeOrmModule.forFeature([InventoryBatch, SaleDetail]),
         ProductsModule,
         ExchangeRatesModule,
     ],

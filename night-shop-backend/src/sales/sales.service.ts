@@ -149,11 +149,12 @@ export class SalesService {
                         -detailDto.quantity,
                     );
                 } else {
-                    // Implementar lógica FIFO para reducir inventario
-                    await this.reduceInventoryFIFO(
+                    // Implementar lógica FIFO para reducir inventario y obtener el lote usado
+                    const batchId = await this.reduceInventoryFIFO(
                         detailDto.productId,
                         detailDto.quantity,
                     );
+                    saleDetail.inventoryBatchId = batchId;
                 }
 
                 await queryRunner.manager.save(saleDetail);
@@ -384,17 +385,20 @@ export class SalesService {
     private async reduceInventoryFIFO(
         productId: string,
         quantity: number,
-    ): Promise<void> {
+    ): Promise<string> {
         // Obtener todos los lotes del producto ordenados por fecha de compra (FIFO)
         const batches =
             await this.inventoryService.findBatchesByProduct(productId);
 
         // Ordenar por fecha de compra (más antiguo primero)
-        batches.sort(
-            (a, b) => a.purchaseDate.getTime() - b.purchaseDate.getTime(),
-        );
+        batches.sort((a, b) => {
+            const dateA = a.purchaseDate instanceof Date ? a.purchaseDate : new Date(a.purchaseDate);
+            const dateB = b.purchaseDate instanceof Date ? b.purchaseDate : new Date(b.purchaseDate);
+            return dateA.getTime() - dateB.getTime();
+        });
 
         let remainingQuantity = quantity;
+        let usedBatchId: string | null = null;
 
         for (const batch of batches) {
             if (remainingQuantity <= 0) break;
@@ -409,6 +413,10 @@ export class SalesService {
                     -quantityToReduce,
                 );
                 remainingQuantity -= quantityToReduce;
+                // Guardar el ID del primer lote usado
+                if (!usedBatchId) {
+                    usedBatchId = batch.id;
+                }
             }
         }
 
@@ -417,6 +425,14 @@ export class SalesService {
                 `Stock insuficiente para el producto ${productId}`,
             );
         }
+
+        if (!usedBatchId) {
+            throw new BadRequestException(
+                `No se encontró lote disponible para el producto ${productId}`,
+            );
+        }
+
+        return usedBatchId;
     }
 
     async addPayment(
@@ -449,6 +465,11 @@ export class SalesService {
         // Obtener la tasa de cambio actual
         const currentExchangeRate = await this.exchangeRatesService.getCurrentRate();
 
+        // Calcular el monto total abonado en USD equivalente
+        const totalAbonedUsd =
+            (paymentDto.amountUsd || 0) +
+            ((paymentDto.amountBs || 0) / currentExchangeRate.rate);
+
         // Crear registros de pago en customer_payments
         if (paymentDto.amountUsd > 0) {
             const paymentUsd = new CustomerPayment();
@@ -472,6 +493,24 @@ export class SalesService {
             paymentBs.amountPaidInOriginalCurrency = paymentDto.amountBs;
             paymentBs.exchangeRateId = currentExchangeRate.id;
             await this.customerPaymentRepository.save(paymentBs);
+        }
+
+        // Verificar si la deuda se ha finiquitado
+        // NOTA: Este flujo abona SOLO a la venta específica (no distribuye FIFO)
+        // Para distribución FIFO entre múltiples deudas, usar CustomersService.addPaymentToCustomerDebts
+        const newDebtUsd = customerAccount.debtUsd - totalAbonedUsd;
+        const roundedNewDebtUsd = Math.round(newDebtUsd * 100) / 100;
+
+        // Actualizar debtUsd en customer_accounts
+        await this.customerAccountRepository.update(
+            { id: customerAccount.id },
+            { debtUsd: roundedNewDebtUsd },
+        );
+
+        if (roundedNewDebtUsd <= 0) {
+            // La deuda está completamente pagada, marcar la venta como COMPLETED
+            sale.status = SaleStatus.COMPLETED;
+            await this.salesRepository.save(sale);
         }
 
         // Retornar la venta actualizada con los nuevos pagos

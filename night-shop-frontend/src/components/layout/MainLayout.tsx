@@ -7,15 +7,19 @@ import {
   Divider, 
   IconButton, 
   Container,
-  useTheme
+  Tooltip
 } from '@mui/material';
 import MuiDrawer from '@mui/material/Drawer';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import { styled } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../context/CompanyContext';
 import Sidebar from './Sidebar';
+import ThemeCustomizer from '../ThemeCustomizer';
+import CompanyConfigDialog from '../CompanyConfigDialog';
 
 const drawerWidth = 240;
 
@@ -74,8 +78,9 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
   const [open, setOpen] = useState(true);
+  const [companyConfigOpen, setCompanyConfigOpen] = useState(false);
   const { user } = useAuth();
-  const theme = useTheme();
+  const { company } = useCompany();
 
   const toggleDrawer = () => {
     setOpen(!open);
@@ -111,9 +116,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
           >
             {title}
           </Typography>
-          <Typography variant="subtitle1" color="inherit">
-            {user?.firstName} {user?.lastName}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ThemeCustomizer />
+            <Tooltip title="Configurar empresa (logo y nombre)">
+              <IconButton
+                color="inherit"
+                onClick={() => setCompanyConfigOpen(true)}
+              >
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+            <Typography variant="subtitle1" color="inherit">
+              {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || 'Usuario'}
+            </Typography>
+          </Box>
         </Toolbar>
       </AppBar>
       <Drawer variant="permanent" open={open}>
@@ -125,9 +141,23 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
             px: [1],
           }}
         >
-          <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
-            Night Shop
-          </Typography>
+          <Box sx={{ flexGrow: 1, ml: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            {company.useImage && company.logoData ? (
+              <img
+                src={company.logoData}
+                alt={company.name}
+                style={{
+                  height: 60,
+                  maxWidth: 120,
+                  objectFit: 'contain',
+                }}
+              />
+            ) : (
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                {company.name}
+              </Typography>
+            )}
+          </Box>
           <IconButton onClick={toggleDrawer}>
             <ChevronLeftIcon />
           </IconButton>
@@ -152,6 +182,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
           {children}
         </Container>
       </Box>
+      <CompanyConfigDialog open={companyConfigOpen} onClose={() => setCompanyConfigOpen(false)} />
     </Box>
   );
 };

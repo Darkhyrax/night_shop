@@ -15,6 +15,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../context/CompanyContext';
 
 // Esquema de validación con Yup
 const validationSchema = yup.object({
@@ -30,6 +31,7 @@ const validationSchema = yup.object({
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading } = useAuth();
+  const { company } = useCompany();
   const [error, setError] = useState<string | null>(null);
 
   // Redireccionar si ya está autenticado
@@ -91,6 +93,11 @@ const Login: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          animation: 'fadeIn 0.5s ease-in',
+          '@keyframes fadeIn': {
+            from: { opacity: 0, transform: 'translateY(10px)' },
+            to: { opacity: 1, transform: 'translateY(0)' },
+          },
         }}
       >
         <Paper
@@ -100,30 +107,58 @@ const Login: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: '100%'
+            width: '100%',
+            borderRadius: 2,
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : '#ffffff',
           }}
         >
-          <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-            <LockOutlinedIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Night Shop
-          </Typography>
-          <Typography component="h2" variant="subtitle1" sx={{ mt: 1 }}>
+          {company.useImage && company.logoData ? (
+            <Box
+              sx={{
+                mt: 2,
+                mb: 3,
+                width: 120,
+                height: 60,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}
+            >
+              <img
+                src={company.logoData}
+                alt={company.name}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </Box>
+          ) : (
+            <>
+              <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 80, height: 80 }}>
+                <LockOutlinedIcon sx={{ fontSize: 40 }} />
+              </Avatar>
+              <Typography component="h1" variant="h5" sx={{ mt: 2, fontWeight: 700 }}>
+                {company.name}
+              </Typography>
+            </>
+          )}
+          <Typography component="h2" variant="subtitle1" sx={{ mt: 2, mb: 3, fontWeight: 600, color: 'text.primary' }}>
             Iniciar Sesión
-          </Typography>
-          
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-            Los campos marcados con <span style={{ color: 'error.main' }}>*</span> son obligatorios
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
+            <Alert severity="error" sx={{ mt: 2, width: '100%', mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 3, width: '100%' }}>
+          <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 2, width: '100%' }}>
             <TextField
               margin="normal"
               fullWidth
@@ -137,6 +172,15 @@ const Login: React.FC = () => {
               onBlur={formik.handleBlur}
               error={formik.touched.username && Boolean(formik.errors.username)}
               helperText={formik.touched.username && formik.errors.username}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: (theme) => `0 0 8px ${theme.palette.primary.main}33`,
+                  },
+                },
+              }}
             />
             <TextField
               margin="normal"
@@ -151,15 +195,41 @@ const Login: React.FC = () => {
               onBlur={formik.handleBlur}
               error={formik.touched.password && Boolean(formik.errors.password)}
               helperText={formik.touched.password && formik.errors.password}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: (theme) => `0 0 8px ${theme.palette.primary.main}33`,
+                  },
+                },
+              }}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              size="large"
+              sx={{
+                mt: 4,
+                mb: 2,
+                py: 1.5,
+                fontWeight: 600,
+                fontSize: '1rem',
+                textTransform: 'none',
+                borderRadius: 1,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: (theme) => `0 8px 16px ${theme.palette.primary.main}40`,
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                },
+              }}
               disabled={isLoading}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar Sesión'}
             </Button>
           </Box>
         </Paper>

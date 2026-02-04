@@ -43,15 +43,19 @@ const Reports: React.FC = () => {
     return (
         <MainLayout title="Reportes">
             <Container maxWidth="lg" sx={{ py: 4 }}>
-                <Paper sx={{ mb: 3 }}>
+                <Paper sx={{ 
+                  mb: 3,
+                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f5f5f5',
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+                }}>
                     <Tabs
                         value={tabValue}
                         onChange={handleTabChange}
                         aria-label="reportes"
                         sx={{
                             borderBottom: 1,
-                            borderColor: 'divider',
-                            backgroundColor: '#f5f5f5',
+                            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'divider',
+                            backgroundColor: 'transparent',
                         }}
                     >
                         <Tab label="📊 Ventas" id="tab-0" aria-controls="tabpanel-0" />
